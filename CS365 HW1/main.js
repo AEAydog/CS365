@@ -110,7 +110,7 @@ window.onload = function init(){
 	//  Configure WebGL
 	//
     gl.viewport( 0, 0, canvas.width, canvas.height );
-    gl.clearColor( 0.4, 0.4, 0.4, 1.0 );   
+    gl.clearColor( 0.4, 0.4, 0.4, 1.0 );
 	 
 	//  Load shaders and initialize attribute buffers
 
@@ -197,6 +197,7 @@ window.onload = function init(){
 		var filename = "save.txt";
 		var data = objects.length + "$";
 		data = data + curID + "$";
+		data = data + index + "$";
 		for(var i = 0; i < objects.length; i++){
 			data = data + objects[i].id + "$";
 			data = data + objects[i].vertices + "$";
@@ -204,6 +205,8 @@ window.onload = function init(){
 			data = data + objects[i].vindex + "$";
 			data = data + objects[i].size + "$";
 		}
+		console.log("logging data\n");
+		console.log(data);
 		const blob = new Blob([data], {type:'text/plain'});
 		if(window.navigator.msSaveOrOpenBlob) {
 			window.navigator.msSaveBlob(blob, filename);
@@ -232,17 +235,13 @@ window.onload = function init(){
 				lines[i] = lines[i].split(',');
 			}
 			objects = [];
-			/*
-			gl.clear( vBuffer | gl.DEPTH_BUFFER_BIT );
-			gl.clear( cBuffer | gl.DEPTH_BUFFER_BIT );
-			gl.createBuffer( vBuffer );
-			gl.createBuffer( cBuffer );*/
 			console.log("logging lines\n");
 			console.log(lines);
-			//curID = parseInt(lines[1][0]);
-			curID = 0;
+			curID = parseInt(lines[1][0]);
+			index = parseInt(lines[2][0]);
+			//curID = 0;
 			var newObjSize = parseInt(lines[0][0]);
-			for(var i = 2; i < newObjSize*5+2; i+=5){
+			for(var i = 3; i < newObjSize*5+3; i+=5){
 				if( lines[i][0] == "" )
 					break;
 				
@@ -310,7 +309,7 @@ window.onload = function init(){
 				break;
 			}
 		}
-		else if(event.button == 1){ //Right Click
+		else if(event.button == 1){ //Middle Click
 			isRDrag = false;
 			isMDrag = true;
 			isLDrag = false;
@@ -425,8 +424,17 @@ window.onload = function init(){
 	
 	canvas.addEventListener("wheel", function(event){
 		var zoomBounds = [10,0.1];
-		zoom = Math.max( Math.min( zoom * (1 + (event.deltaY * 0.001)) , zoomBounds[0] ) , zoomBounds[1] );  // 10 > zoom > 0.1		
+		var prevML = translateCoord( event.clientX, event.clientY );
+		zoom = Math.max( Math.min( zoom * (1 + (event.deltaY * 0.001)) , zoomBounds[0] ) , zoomBounds[1] );  // 10 > zoom > 0.1
+		//var ratioChange = zoom / prevZoom;
+		//offset[0] *= ratioChange;
+		//offset[1] *= ratioChange;
 		gl.uniform1f(zoomLoc,zoom);
+		var newML = translateCoord( event.clientX, event.clientY );
+		offset[0] += newML[0] - prevML[0];
+		offset[1] += newML[1] - prevML[1];
+		var offsetLoc = gl.getUniformLocation(program, "offset");
+		gl.uniform2fv(offsetLoc, offset);
 	});
 	
 	canvas.addEventListener("mouseleave", function(event){
@@ -543,7 +551,7 @@ function createTriangle( p1 , p2 ){
 	var createdObject = {
 		id: curID,
 		vertices: [p1,p3,p2],
-		colors: [c,c,c,c],
+		colors: [c,c,c],
 		vindex: index,
 		size: 3
 	}
