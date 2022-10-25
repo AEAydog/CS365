@@ -29,7 +29,8 @@ const functions = {
 	moveObject:3,
 	moveCamera:4,
 	rotateObject:5,
-	selectObject:6
+	selectObject:6,
+	selectMultipleObjects:7
 }
 
 //Event Variables & Arrays
@@ -67,6 +68,8 @@ var curID = 0;
 
 var selectedObjectId = -1;
 var selectedObjects = [];
+var copiedObjects = [];
+
 
 var objects = [];
 
@@ -241,12 +244,18 @@ window.onload = function init(){
 			isRDrag = false;
 			isMDrag = false;
 			isLDrag = true;
-		
+			
 			var selectedPixel = translateCoord(event.clientX, event.clientY);
 			for(var i = 0; i < objects.length; i += 1){
 				if(pointInPolygon(objects[i].vertices,selectedPixel)){
 					selectedObjectId = objects[i].id;
-					currentFunction = functions.selectObject;
+					currentFunction = currentFunction == functions.selectMultipleObjects 
+									? functions.selectMultipleObjects : functions.selectObject;
+									
+					if(currentFunction == functions.selectMultipleObjects){ //multiple select mode
+						selectedObjects.push(objects[i]);
+					}
+					console.log(selectedObjects);
 					break;
 				}	
 				selectedObjectId = -1;
@@ -266,10 +275,9 @@ window.onload = function init(){
 			console.log(lastRotation);
 			
 			//Store event for undo/redo
-			if(selectedObjectId != -1){
+			if(selectedObjectId != -1 && lastRotation != 0){
 				addUndo(selectedObjectId,events.Rotate,lastRotation);
 			}
-			
 			
 			lastRotation = 0.0;
 			
@@ -296,8 +304,9 @@ window.onload = function init(){
 		else if(event.button == 0){	//Left Click
 			isLDrag = false;
 			console.log(lastMovement);
+			
 			//Store event for undo/redo
-			if(selectedObjectId != -1){
+			if(selectedObjectId != -1 && lastMovement[0] != 0 && lastMovement[1] != 0){
 				addUndo(selectedObjectId,events.Move,lastMovement);
 			}
 			
@@ -373,6 +382,16 @@ window.onload = function init(){
 			break;
 			case (89):			//Y
 				redo();
+			break;
+			case (16):			//Shift
+				currentFunction = currentFunction == functions.selectMultipleObjects ? -1 : functions.selectMultipleObjects;
+				if(currentFunction == -1) selectedObjects = [];
+			break;
+			case (67):			//C
+				copiedObjects = structuredClone(selectedObjects);
+			break;
+			case (86):			//V
+				pasteCopiedObjects();
 			break;
 		}
 
@@ -524,7 +543,7 @@ function createPolygonFromInfo( object ){
 	}
 	
 	var createdObject = {
-		id: object.id,
+		id: curID,
 		vertices: object.vertices,
 		colors: object.colors,
 		vindex: index,
@@ -534,11 +553,13 @@ function createPolygonFromInfo( object ){
 	objects.push(createdObject);
 	
 	//Store event for undo/redo
-	var ObjectGhostData = structuredClone(createdObject); 
-	addUndo(curID,events.Create,ObjectGhostData);
+	//var ObjectGhostData = structuredClone(createdObject); 
+	//addUndo(curID,events.Create,ObjectGhostData);
 	
 	curID += 1;
 	index += object.size;
+	
+	return createdObject.id;
 }
 
 function rotateObject(ind,theta){
@@ -669,6 +690,9 @@ function deleteObject(ind,isUndo){
 }
 
 function addUndo(id, mode, _info){
+	
+	redoStack = []; //reste redo Stack
+	
 	var thisEvent = 
 	{
 		objId: id,
@@ -684,6 +708,8 @@ function addUndo(id, mode, _info){
 
 function undo(){
 	var thisEvent = undoStack.pop();
+	if(thisEvent == undefined) return;
+	
 	if(redoStack.length >= 10) redoStack.shift();
 	redoStack.push(thisEvent);
 	
@@ -710,6 +736,8 @@ function undo(){
 function redo(){
 	
 	var thisEvent = redoStack.pop();
+	if(thisEvent == undefined) return;
+	
 	if(undoStack.length >= 10) undoStack.shift();
 	undoStack.push(thisEvent);
 	
@@ -719,20 +747,41 @@ function redo(){
 	if(thisEvent != null){
 		switch(thisEvent.ev){
 			case(events.Create):
-				createPolygonFromInfo(thisEvent.info);
+			
+				var nid = createPolygonFromInfo(thisEvent.info);
+
+				//Correct the id of the last element in the stack
+				thisEvent = undoStack.pop();
+				thisEvent.info.id = nid;
+				thisEvent.objId = nid;
+				undoStack.push(thisEvent);
+				
 				
 				break;
 			case(events.Rotate):
 				rotateObject(thisEvent.objId, thisEvent.info);
+
 				break;
 			case(events.Move):
 				thisEvent.info[0] *= -1;
 				thisEvent.info[1] *= -1;
 				moveObject(thisEvent.objId, thisEvent.info[0], thisEvent.info[1]);
+
 				break;
 		}
 	}
 	
+}
+
+function pasteCopiedObjects(){
+	for(var i = 0; i < copiedObjects.length ; i+= 1){
+		let obj = copiedObjects[i];
+		for(var j = 0; j < obj.size ; j+= 1){
+			obj.vertices[j][0] += 0.1;
+			obj.vertices[j][1] += 0.1;
+		}
+		createPolygonFromInfo(obj);
+	}
 }
 
 //This function is taken from https://www.algorithms-and-technologies.com/point_in_polygon/javascript
