@@ -581,6 +581,10 @@ function createEquitri( p1 , p2 ){
 	p3 = vec2((p1[0] + p2[0]) * 0.5, p1[1]);
 	p1 = vec2(p1[0],p2[1]);
 	
+	var shorter = true; //if true the shorter edge is between p1-p2
+
+
+	
 	
 	gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
 
@@ -953,4 +957,20 @@ function render() {
    //gl.drawArrays( gl.TRIANGLE_FAN, 0, 4 );
    //console.log(isDrag);
    window.requestAnimFrame(render);
+}
+
+function parseColorMatrix( colors ){
+	var result = [];
+	for( var i = 0; i < colors.length; i+=4 ){
+		result.push([colors[i], colors[i+1], colors[i+2], colors[i+3]]);
+	}
+	return result;
+}
+
+function parseVerticesMatrix( vertices ){
+	var result = [];
+	for( var i = 0; i < vertices.length; i+=2 ){
+		result.push([vertices[i], vertices[i+1]]);
+	}
+	return result;
 }
