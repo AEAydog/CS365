@@ -1,3 +1,13 @@
+/*
+var createdObject = {
+		id: curID,
+		vertices: [p1,p3,p2],
+		colors: [c,c,c,c],
+		vindex: index,
+		size: 3
+	}
+*/
+
 var gl;
 var points;
 
@@ -184,11 +194,78 @@ window.onload = function init(){
 	});
 	
 	saveButton.addEventListener("click", function(){
-
+		var filename = "save.txt";
+		var data = objects.length + "$";
+		data = data + curID + "$";
+		for(var i = 0; i < objects.length; i++){
+			data = data + objects[i].id + "$";
+			data = data + objects[i].vertices + "$";
+			data = data + objects[i].colors + "$";
+			data = data + objects[i].vindex + "$";
+			data = data + objects[i].size + "$";
+		}
+		const blob = new Blob([data], {type:'text/plain'});
+		if(window.navigator.msSaveOrOpenBlob) {
+			window.navigator.msSaveBlob(blob, filename);
+		}
+		else{
+			const elem = window.document.createElement('a');
+			elem.href = window.URL.createObjectURL(blob);
+			elem.download = filename;        
+			document.body.appendChild(elem);
+			elem.click();        
+			document.body.removeChild(elem);
+		}
 	});
-	
-	loadButton.addEventListener("click", function(){
 
+	loadButton.addEventListener("change", function(){
+		if(loadButton.files.length == 0){
+			console.log("No files selected!\n");
+			return;
+		}
+		var fr = new FileReader();
+		fr.onload = (e) => { 
+			var lines;
+			const file = e.target.result; 
+			lines = file.split(/\$/);
+			for(var i = 0; i < lines.length; i++){
+				lines[i] = lines[i].split(',');
+			}
+			objects = [];
+			/*
+			gl.clear( vBuffer | gl.DEPTH_BUFFER_BIT );
+			gl.clear( cBuffer | gl.DEPTH_BUFFER_BIT );
+			gl.createBuffer( vBuffer );
+			gl.createBuffer( cBuffer );*/
+			console.log("logging lines\n");
+			console.log(lines);
+			//curID = parseInt(lines[1][0]);
+			curID = 0;
+			var newObjSize = parseInt(lines[0][0]);
+			for(var i = 2; i < newObjSize*5+2; i+=5){
+				if( lines[i][0] == "" )
+					break;
+				
+				var newID = parseInt(lines[i][0]);
+				var newVertices = parseVerticesMatrix(lines[i+1]);
+				var newColors = parseColorMatrix(lines[i+2]);
+				var newVindex = parseInt(lines[i+3][0]);
+				var newSize = parseInt(lines[i+4][0]);
+				var createdObject = {
+					id: newID,
+					vertices: newVertices,
+					colors: newColors,
+					vindex: newVindex,
+					size: newSize
+				}
+				//objects.push(createdObject);
+				//console.log(createdObject);
+				createPolygon( newVertices );
+			}
+			render();
+			
+		}; 
+		fr.readAsText(loadButton.files[0]);
 	});
 	
 	
@@ -482,9 +559,6 @@ function createPolygon( p ){
 	
 	if(p.length < 3) return;
 	
-	
-	
-	
 	gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
 	for(var i = 0; i < p.length ; i += 1){
 		gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index + i), flatten(p[i]));
@@ -692,4 +766,20 @@ function render() {
    //gl.drawArrays( gl.TRIANGLE_FAN, 0, 4 );
    //console.log(isDrag);
    window.requestAnimFrame(render);
+}
+
+function parseColorMatrix( colors ){
+	var result = [];
+	for( var i = 0; i < colors.length; i+=4 ){
+		result.push([colors[i], colors[i+1], colors[i+2], colors[i+3]]);
+	}
+	return result;
+}
+
+function parseVerticesMatrix( vertices ){
+	var result = [];
+	for( var i = 0; i < vertices.length; i+=2 ){
+		result.push([vertices[i], vertices[i+1]]);
+	}
+	return result;
 }
