@@ -576,6 +576,51 @@ function createTriangle( p1 , p2 ){
 	index += 3;
 }
 
+function createEquitri( p1 , p2 ){
+	
+	//TODO -> needs to be equilateral => a,a,a
+	
+	// |                      |
+	// v placeholder function v
+
+	p3 = vec2((p1[0] + p2[0]) * 0.5, p1[1]);
+	p1 = vec2(p1[0],p2[1]);
+	
+	
+	gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
+
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(p1));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+1), flatten(p3));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+2), flatten(p2));
+
+	gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
+	
+
+	var c = vec4(colors[curColorIndex]);
+
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(c));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index + 1), flatten(c));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index + 2), flatten(c));
+	
+	var createdObject = {
+		id: curID,
+		vertices: [p1,p3,p2],
+		colors: [c,c,c],
+		vindex: index,
+		size: 3
+	}
+	
+	objects.push(createdObject);
+	
+	//Store event for undo/redo
+	addUndo(curID,events.Create,0);
+	var ObjectGhostData = structuredClone(createdObject); 
+	addUndo(curID,events.Create,ObjectGhostData);
+	
+	curID += 1;
+	index += 3;
+}
+
 function createPolygon( p ){
 	
 	if(p.length < 3) return;
