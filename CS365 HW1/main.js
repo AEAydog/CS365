@@ -260,7 +260,8 @@ window.onload = function init(){
 				}
 				//objects.push(createdObject);
 				//console.log(createdObject);
-				createPolygon( newVertices );
+				//createPolygon( newVertices );
+				createPolygonFromInfo( createdObject );
 			}
 			render();
 			
@@ -506,7 +507,8 @@ function createSquare( p1 , p2 ){
 	objects.push(createdObject);
 	
 	//Store event for undo/redo
-	addUndo(curID,events.Create,0);
+	var ObjectGhostData = structuredClone(createdObject); 
+	addUndo(curID,events.Create,ObjectGhostData);
 	
 	curID += 1;
 	index += 4;
@@ -550,6 +552,8 @@ function createTriangle( p1 , p2 ){
 	
 	//Store event for undo/redo
 	addUndo(curID,events.Create,0);
+	var ObjectGhostData = structuredClone(createdObject); 
+	addUndo(curID,events.Create,ObjectGhostData);
 	
 	curID += 1;
 	index += 3;
@@ -567,15 +571,17 @@ function createPolygon( p ){
 	var c = vec4(colors[curColorIndex]);
 	gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
 	
+	var newColors = [];
 	for(var i = 0; i < p.length ; i += 1){
 		gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index + i), flatten(c));
+		newColors.push(c);
 	}
 	
 	
 	var createdObject = {
 		id: curID,
 		vertices: p,
-		colors: p,
+		colors: newColors,
 		vindex: index,
 		size: p.length
 	}
@@ -583,10 +589,46 @@ function createPolygon( p ){
 	objects.push(createdObject);
 	
 	//Store event for undo/redo
-	addUndo(curID,events.Create,0);
+	var ObjectGhostData = structuredClone(createdObject); 
+	addUndo(curID,events.Create,ObjectGhostData);
 	
 	curID += 1;
 	index += p.length;
+}
+
+function createPolygonFromInfo( object ){
+
+	if(object.vertices.length < 3) return;
+
+
+	gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
+	for(var i = 0; i < object.size ; i += 1){
+		gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index + i), flatten(object.vertices[i]));
+	}
+
+	//var c = vec4(colors[curColorIndex]);
+	gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
+	var newColors = [];
+	for(var i = 0; i < object.size ; i += 1){
+		gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index + i), flatten(object.colors[i]));
+	}
+
+	var createdObject = {
+		id: object.id,
+		vertices: object.vertices,
+		colors: object.colors,
+		vindex: index,
+		size: object.size
+	}
+
+	objects.push(createdObject);
+
+	//Store event for undo/redo
+	var ObjectGhostData = structuredClone(createdObject); 
+	addUndo(curID,events.Create,ObjectGhostData);
+
+	curID += 1;
+	index += object.size;
 }
 
 function rotateObject(ind,theta){
@@ -717,15 +759,72 @@ function deleteObject(ind,isUndo){
 				//console.log(objects);
 }
 
-function undo(){
-	var thisEvent = undoStack.pop();
-	if(redoStack.length >= 5) redoStack.shift();
-	redoStack.push(thisEvent);
-	
-	
+function addUndo(id, mode, _info){
+	var thisEvent = 
+	{
+		objId: id,
+		ev: mode,
+		info: _info
+	};
+
+	if(undoStack.length >= 10) undoStack.shift();
+	undoStack.push(thisEvent);
+
+	console.log(undoStack);
 }
 
-function redo(){}
+function undo(){
+	var thisEvent = undoStack.pop();
+	if(redoStack.length >= 10) redoStack.shift();
+	redoStack.push(thisEvent);
+	
+	console.log(undoStack);
+	console.log(redoStack);
+
+	if(thisEvent != null){
+		switch(thisEvent.ev){
+			case(events.Create):
+				deleteObject(thisEvent.objId,true);
+				break;
+			case(events.Rotate):
+				rotateObject(thisEvent.objId,-thisEvent.info);
+				break;
+			case(events.Move):
+				thisEvent.info[0] *= -1;
+				thisEvent.info[1] *= -1;
+				moveObject(thisEvent.objId, thisEvent.info[0], thisEvent.info[1]);
+				break;
+		}
+	}
+}
+
+function redo(){
+
+	var thisEvent = redoStack.pop();
+	if(undoStack.length >= 10) undoStack.shift();
+	undoStack.push(thisEvent);
+
+	console.log(undoStack);
+	console.log(redoStack);
+
+	if(thisEvent != null){
+		switch(thisEvent.ev){
+			case(events.Create):
+				createPolygonFromInfo(thisEvent.info);
+
+				break;
+			case(events.Rotate):
+				rotateObject(thisEvent.objId, thisEvent.info);
+				break;
+			case(events.Move):
+				thisEvent.info[0] *= -1;
+				thisEvent.info[1] *= -1;
+				moveObject(thisEvent.objId, thisEvent.info[0], thisEvent.info[1]);
+				break;
+		}
+	}
+
+}
 
 //This function is taken from https://www.algorithms-and-technologies.com/point_in_polygon/javascript
 //This function checks whether the point lies inside a polygon
