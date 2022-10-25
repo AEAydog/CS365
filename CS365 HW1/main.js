@@ -1,13 +1,3 @@
-/*
-var createdObject = {
-		id: curID,
-		vertices: [p1,p3,p2],
-		colors: [c,c,c,c],
-		vindex: index,
-		size: 3
-	}
-*/
-
 var gl;
 var points;
 
@@ -37,7 +27,9 @@ const functions = {
 	triangle:1,
 	polygon:2,
 	moveObject:3,
-	moveCamera:4
+	moveCamera:4,
+	rotateObject:5,
+	selectObject:6
 }
 
 //Event Variables & Arrays
@@ -74,6 +66,8 @@ var colors = [
 var curID = 0;
 
 var selectedObjectId = -1;
+var selectedObjects = [];
+
 var objects = [];
 
 var exampleObject = {
@@ -117,16 +111,14 @@ window.onload = function init(){
 
     vBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
-	gl.bufferData( gl.ARRAY_BUFFER, 80*maxNumVertices, gl.STATIC_DRAW );
-    //gl.bufferData( gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW ); 
-	
+	gl.bufferData( gl.ARRAY_BUFFER, 80*maxNumVertices, gl.STATIC_DRAW );	
 	// Associate out shader variables with our data buffer
-
 	vPosition = gl.getAttribLocation( program, "vPosition" );
 	gl.vertexAttribPointer( vPosition, 2, gl.FLOAT, false, 0, 0 );
 	gl.enableVertexAttribArray( vPosition ); 	  
     
-    cBuffer = gl.createBuffer();
+    
+	cBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, 160*maxNumVertices, gl.STATIC_DRAW );
     
@@ -141,15 +133,32 @@ window.onload = function init(){
 	var offsetLoc = gl.getUniformLocation(program, "offset");
 	offset = vec2(0.0,0.0);
 	gl.uniform2fv(offsetLoc,offset);	 
-	//--UI FUNCTIONALITIES--
+	
+	//Initialize shape selector
+	p1 = vec2(0.0,0.0);
+	gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(p1));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+1), flatten(p1));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+2), flatten(p1));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+3), flatten(p1));
+	
+	var grayColor = vec4(0.8,0.8,0.8,1.0);
+	
+	gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(grayColor));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index + 1), flatten(grayColor));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index + 2), flatten(grayColor));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index + 3), flatten(grayColor));
+	
+	index += 4;
+	
+	//--UI FUNCTIONALITIES-- 
 	 
 	//UI Event Listeners
 	var shapeMenu = document.getElementById( "shape-menu" );
 	var colorMenu = document.getElementById( "color-menu" );
 	var saveButton = document.getElementById( "save-button" );
 	var loadButton = document.getElementById( "load-button" );
-	var undoButton = document.getElementById( "undo-button" );
-	var redoButton = document.getElementById( "redo-button" );
 	
 	shapeMenu.addEventListener("click", function(){
 		switch(shapeMenu.selectedIndex){
@@ -175,95 +184,17 @@ window.onload = function init(){
 	});
 	
 	saveButton.addEventListener("click", function(){
-		var filename = "save.txt";
-		var data = objects.length + "$";
-		data = data + curID + "$";
-		for(var i = 0; i < objects.length; i++){
-			data = data + objects[i].id + "$";
-			data = data + objects[i].vertices + "$";
-			data = data + objects[i].colors + "$";
-			data = data + objects[i].vindex + "$";
-			data = data + objects[i].size + "$";
-		}
-		const blob = new Blob([data], {type:'text/plain'});
-		if(window.navigator.msSaveOrOpenBlob) {
-			window.navigator.msSaveBlob(blob, filename);
-		}
-		else{
-			const elem = window.document.createElement('a');
-			elem.href = window.URL.createObjectURL(blob);
-			elem.download = filename;        
-			document.body.appendChild(elem);
-			elem.click();        
-			document.body.removeChild(elem);
-		}
-	});
-	
-	loadButton.addEventListener("change", function(){
-		if(loadButton.files.length == 0){
-			console.log("No files selected!\n");
-			return;
-		}
-		var fr = new FileReader();
-		fr.onload = (e) => { 
-			var lines;
-			const file = e.target.result; 
-			lines = file.split(/\$/);
-			for(var i = 0; i < lines.length; i++){
-				lines[i] = lines[i].split(',');
-			}
-			//objects = [];
-			console.log("logging lines\n");
-			console.log(lines);
-			curID = parseInt(objects[1]);
-			console.log(curID);
-			/*
-			for(var i = 0; i < lines[0].length / 2; i++){ // get points array from file
-				points.push(vec2(parseFloat(lines[0][2*i]),parseFloat(lines[0][2*i+1])));
-			}
-			for(var i = 0; i < lines[1].length; i++){ //get color arr from file
-				colorArr[i] = parseFloat(lines[1][i]);
-			}
-			
-			index = parseFloat(lines[2][0]); // get current index from file
-			
-			first = parseFloat(lines[3][0]); // get whether first line is drawn or not
-
-			draw = parseFloat(lines[4][0]); // get whether polygon is drawn or not
-			recursion = parseFloat(lines[5][0]); // get the number of recursion from file
-			for(var i = 0; i < lines[6].length / 2; i++){  // get reccured points from the file
-				recPoints.push(vec2(parseFloat(lines[6][2 * i]),parseFloat(lines[6][2 * i+1])));
-			}
-			for(var i = 0; i < lines[7].length / 4; i++){ // get recurred colors from the file
-				recColors.push(vec4(parseFloat(lines[7][4 * i]),parseFloat(lines[7][4* i+1]),parseFloat(lines[7][4*i+2]),parseFloat(lines[7][4*i+3])));
-			}
-			clearCol = vec4(parseFloat(lines[8][0]),parseFloat(lines[8][1]),parseFloat(lines[8][2]),parseFloat(lines[8][3])); // get last clear color from file
-			
-			//initialise buffers and clear color
-			gl.clearColor(clearCol[0],clearCol[1],clearCol[2],1);
-			gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
-			gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(recPoints));
-			gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
-			gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(recColors));
-			
-			render();
-			*/
-		}; 
-		fr.readAsText(loadButton.files[0]);
-	});
-	
-	undoButton.addEventListener("click", function(){
 
 	});
 	
-	redoButton.addEventListener("click", function(){
+	loadButton.addEventListener("click", function(){
 
 	});
 	
 	
 	//Utilty
 	function translateCoord(pX, pY){
-		console.log(canvas.height);
+		//console.log(canvas.height);
 		return vec2(
 			(2 * pX/canvas.width - 1) / zoom - offset[0], 
 			(2 * (canvas.height-pY)/canvas.height - 1) / zoom - offset[1]
@@ -311,14 +242,37 @@ window.onload = function init(){
 			isMDrag = false;
 			isLDrag = true;
 		
+			var selectedPixel = translateCoord(event.clientX, event.clientY);
+			for(var i = 0; i < objects.length; i += 1){
+				if(pointInPolygon(objects[i].vertices,selectedPixel)){
+					selectedObjectId = objects[i].id;
+					currentFunction = functions.selectObject;
+					break;
+				}	
+				selectedObjectId = -1;
+			}
+			console.log(selectedObjectId);
+			updateHighlightBox();
 			
 		}
     } );
 	
+	var lastRotation = 0.0;
+	var lastMovement = vec2(0.0,0.0);
 	canvas.addEventListener("mouseup", function(event){
 		
 		if(event.button == 2){ //Right Click
 			isRDrag = false;
+			console.log(lastRotation);
+			
+			//Store event for undo/redo
+			if(selectedObjectId != -1){
+				addUndo(selectedObjectId,events.Rotate,lastRotation);
+			}
+			
+			
+			lastRotation = 0.0;
+			
 			
 			switch(currentFunction){
 				case(functions.square):
@@ -341,31 +295,25 @@ window.onload = function init(){
 		}
 		else if(event.button == 0){	//Left Click
 			isLDrag = false;
+			console.log(lastMovement);
+			//Store event for undo/redo
+			if(selectedObjectId != -1){
+				addUndo(selectedObjectId,events.Move,lastMovement);
+			}
+			
+			lastMovement = vec2(0.0,0.0);
 			
 		}
     } );
 	
 	canvas.addEventListener("click", function(event){
-		if(event.button == 0){	//Left Click
-		
-			//Find oobject Id in clicked point
-			var selectedPixel = translateCoord(event.clientX, event.clientY);
-			for(var i = 0; i < objects.length; i += 1){
-				if(pointInPolygon(objects[i].vertices,selectedPixel)){
-					selectedObjectId = objects[i].id
-					break;
-				}	
-				selectedObjectId = -1;
-			}
-			console.log(selectedObjectId);
-		}
 		
 	});
 	
 	canvas.addEventListener("mousemove", function(event){
 		
 		if(isMDrag){
-		var offsetLoc = gl.getUniformLocation(program, "offset");
+		//var offsetLoc = gl.getUniformLocation(program, "offset");
 		
 		offset[0] += 2*(event.movementX)/(canvas.width-1) / zoom;
 		offset[1] += 2*(-event.movementY)/(canvas.height-1) / zoom;
@@ -373,27 +321,33 @@ window.onload = function init(){
 		gl.uniform2fv(offsetLoc, offset);
 		//console.log(event.clientX + " - " + event.clientY);
 		}
-		else if(isRDrag){
+		else if(isRDrag && currentFunction == functions.selectObject){
 			if( selectedObjectId != -1 ){
 				var rotationAngle = 2*(event.movementX)/(canvas.width-1);
-				console.log(rotationAngle);
-				rotateSelectedObject(rotationAngle);
+				lastRotation += rotationAngle;	//update total rotation in the last event
+
+				updateHighlightBox();
+				rotateObject(selectedObjectId ,rotationAngle);
 			}
 		}
-		else if(isLDrag){
+		else if(isLDrag && currentFunction == functions.selectObject){
 			if( selectedObjectId != -1 ){
 				var dx = 2*(event.movementX)/(canvas.width-1) / zoom;
 				var dy = 2*(-event.movementY)/(canvas.height-1) / zoom;
 				
-				moveSelectedObject(dx,dy);
+				lastMovement[0] += dx;	//update total rotation in the last event
+				lastMovement[1] += dy;
+				
+				updateHighlightBox();
+				moveObject(selectedObjectId ,dx,dy);
 			}
 		}
 			
 	});
 	
 	canvas.addEventListener("wheel", function(event){
-
-		zoom = Math.max( Math.min( zoom * (1 + (event.deltaY * 0.001)) , 10 ) , 0.1 );  // 10 > zoom > 0.1		
+		var zoomBounds = [10,0.1];
+		zoom = Math.max( Math.min( zoom * (1 + (event.deltaY * 0.001)) , zoomBounds[0] ) , zoomBounds[1] );  // 10 > zoom > 0.1		
 		gl.uniform1f(zoomLoc,zoom);
 	});
 	
@@ -407,37 +361,18 @@ window.onload = function init(){
 		
 		switch (event.keyCode) {
 			case(46):			//DEL
-			console.log("currently in DEL");
-			if(selectedObjectId != -1){ //If an object is currently selected
-				console.log("deleting" + selectedObjectId);
-				//DELETE
-				selectedIndex = objects.indexOf(objects.find( obj => {return obj.id === selectedObjectId } ));
-				
-				gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);	//bind vertex buffer
-				for(var i = 0; i < objects[selectedIndex].vertices.length; i+=1){
-					var nullVertice = vec2(0.0,0.0);
-					gl.bufferSubData(gl.ARRAY_BUFFER, 8*(objects[selectedIndex].vindex + i), flatten(nullVertice));
-				}
-				
-				gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);	//bind vertex buffer
-				for(var i = 0; i < objects[selectedIndex].vertices.length; i+=1){
-					var nullVertice = vec4(0.0,0.0,0.0,0.0);
-					gl.bufferSubData(gl.ARRAY_BUFFER, 16*(objects[selectedIndex].vindex + i), flatten(nullVertice));
-				}
-				
-				objects.splice(selectedIndex, 1); //remove object from objects array
-				selectedIndex = -1;
-				
-				console.log(objects);
-			}
+			if(currentFunction == functions.selectObject) deleteObject(selectedObjectId,false);
 			break;
 			case (78):			//N
 				console.log("n");
 				createPolygon(p);
 				p = [];				//Clear p array
 			break;
-			case (1):
-				var dsaasd = 0;
+			case (90):			//Z
+				undo();
+			break;
+			case (89):			//Y
+				redo();
 			break;
 		}
 
@@ -447,6 +382,20 @@ window.onload = function init(){
 	
 };
 
+function addUndo(id, mode, _info){
+	var thisEvent = 
+	{
+		objId: id,
+		ev: mode,
+		info: _info
+	};
+	
+	if(undoStack.length >= 5) undoStack.shift();
+	undoStack.push(thisEvent);
+	
+	console.log(undoStack);
+}
+
 function createSquare( p1 , p2 ){
 	
 	//finalize vertices
@@ -455,22 +404,18 @@ function createSquare( p1 , p2 ){
 	
 	//insert vertices as subdata
 	gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
-	
 	gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(p1));
 	gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+1), flatten(p3));
 	gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+2), flatten(p2));
 	gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+3), flatten(p4));
-
-
-	gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
 	
 	var c = vec4(colors[curColorIndex]);
-
+	
+	gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
 	gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(c));
 	gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index + 1), flatten(c));
 	gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index + 2), flatten(c));
 	gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index + 3), flatten(c));
-	
 	
 	//store oop friendly data of the object in the 'objects' list
 	var createdObject = {
@@ -482,6 +427,9 @@ function createSquare( p1 , p2 ){
 	}
 	
 	objects.push(createdObject);
+	
+	//Store event for undo/redo
+	addUndo(curID,events.Create,0);
 	
 	curID += 1;
 	index += 4;
@@ -512,9 +460,6 @@ function createTriangle( p1 , p2 ){
 	gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(c));
 	gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index + 1), flatten(c));
 	gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index + 2), flatten(c));
-
-	
-	
 	
 	var createdObject = {
 		id: curID,
@@ -525,6 +470,9 @@ function createTriangle( p1 , p2 ){
 	}
 	
 	objects.push(createdObject);
+	
+	//Store event for undo/redo
+	addUndo(curID,events.Create,0);
 	
 	curID += 1;
 	index += 3;
@@ -560,11 +508,14 @@ function createPolygon( p ){
 	
 	objects.push(createdObject);
 	
+	//Store event for undo/redo
+	addUndo(curID,events.Create,0);
+	
 	curID += 1;
 	index += p.length;
 }
 
-function rotateSelectedObject(theta){
+function rotateObject(ind,theta){
 	
 	//
 	//	ToDo - erroneous
@@ -572,7 +523,8 @@ function rotateSelectedObject(theta){
 	
 	var selectedIndex = -1;
 	var geoCenter;
-	selectedIndex = objects.indexOf(objects.find( obj => {return obj.id === selectedObjectId } ));	//find object
+	selectedIndex = objects.indexOf(objects.find( obj => {return obj.id === ind } ));	//find object
+	
 	if(1){
 		//calculate geoCenter
 		var sum = vec2(0.0,0.0);
@@ -606,9 +558,9 @@ function rotateSelectedObject(theta){
 	
 }
 
-function moveSelectedObject(dx,dy){
+function moveObject(ind ,dx,dy){
 	var selectedIndex = -1;
-	selectedIndex = objects.indexOf(objects.find( obj => {return obj.id === selectedObjectId } ));
+	selectedIndex = objects.indexOf(objects.find( obj => {return obj.id === ind } ));
 	
 	if(1){
 		gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);	//bind vertex buffer
@@ -618,10 +570,88 @@ function moveSelectedObject(dx,dy){
 			
 			objects[selectedIndex].vertices[i] = newVertice;	//Update vertice
 			
+			
 			gl.bufferSubData(gl.ARRAY_BUFFER, 8*(objects[selectedIndex].vindex + i), flatten(newVertice));
 		}
 	}
 }
+
+function updateHighlightBox(points){ //This function finds the smallest rectangle that contains the given points and updates highlight box accordingly
+	var selectedIndex = -1;
+	selectedIndex = objects.indexOf(objects.find( obj => {return obj.id === selectedObjectId } ));
+	
+	var points
+	if(selectedIndex != -1) {points = objects[selectedIndex].vertices;}
+	else{
+	points = [vec2(0.0,0.0)];
+	} 
+	
+	var min, max;
+	minx = points[0][0];
+	maxx = points[0][0];
+	miny = points[0][1];
+	maxy = points[0][1];
+	
+	for(var i = 0; i < points.length; i+= 1){
+		minx = Math.min(minx , points[i][0]);
+		miny = Math.min(miny , points[i][1]);
+		
+		maxx = Math.max(maxx , points[i][0]);
+		maxy = Math.max(maxy , points[i][1]);
+	}
+	
+	var p1 = vec2(minx,miny);
+	var p2 = vec2(maxx,miny);
+	var p3 = vec2(maxx,maxy);
+	var p4 = vec2(minx,maxy);
+	
+	gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8*0, flatten(p1));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8*(0+1), flatten(p2));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8*(0+2), flatten(p3));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8*(0+3), flatten(p4));
+	
+}
+
+function deleteObject(ind,isUndo){
+	if(1) //If an object is currently selected
+				console.log("deleting" + ind);
+				//DELETE
+				selectedIndex = objects.indexOf(objects.find( obj => {return obj.id === ind } ));
+				
+				if(isUndo){
+					
+				}
+				
+				
+				gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);	//bind vertex buffer
+				for(var i = 0; i < objects[selectedIndex].vertices.length; i+=1){
+					var nullVertice = vec2(0.0,0.0);
+					gl.bufferSubData(gl.ARRAY_BUFFER, 8*(objects[selectedIndex].vindex + i), flatten(nullVertice));
+				}
+				
+				gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);	//bind color buffer
+				for(var i = 0; i < objects[selectedIndex].vertices.length; i+=1){
+					var nullVertice = vec4(0.0,0.0,0.0,0.0);
+					gl.bufferSubData(gl.ARRAY_BUFFER, 16*(objects[selectedIndex].vindex + i), flatten(nullVertice));
+				}
+				
+				objects.splice(selectedIndex, 1); //remove object from objects array
+				selectedIndex = -1;
+				
+				updateHighlightBox();
+				//console.log(objects);
+}
+
+function undo(){
+	var thisEvent = undoStack.pop();
+	if(redoStack.length >= 5) redoStack.shift();
+	redoStack.push(thisEvent);
+	
+	
+}
+
+function redo(){}
 
 //This function is taken from https://www.algorithms-and-technologies.com/point_in_polygon/javascript
 //This function checks whether the point lies inside a polygon
@@ -647,11 +677,18 @@ const pointInPolygon = function (polygon, point) {
 function render() {
     gl.clear( gl.COLOR_BUFFER_BIT ); 
 	//console.log(objects);
+	
+	//Draw 'objects'
 	for(var i = 0; i < objects.length ; i+= 1){
 		let obj = objects[i];
 		
 		gl.drawArrays( gl.TRIANGLE_FAN, obj.vindex, obj.size );
 	}
+	
+	gl.drawArrays( gl.LINE_LOOP, 0, 4 ); //Draw selection highlight box
+	
+	//Draw the borders of selected object(s)	
+	
    //gl.drawArrays( gl.TRIANGLE_FAN, 0, 4 );
    //console.log(isDrag);
    window.requestAnimFrame(render);
