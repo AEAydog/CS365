@@ -103,7 +103,7 @@ window.onload = function init(){
 	//  Configure WebGL
 	//
     gl.viewport( 0, 0, canvas.width, canvas.height );
-    gl.clearColor( 0.4, 0.4, 0.4, 1.0 );   
+    gl.clearColor( 0.4, 0.4, 0.4, 1.0 );
 	 
 	//  Load shaders and initialize attribute buffers
 
@@ -187,11 +187,87 @@ window.onload = function init(){
 	});
 	
 	saveButton.addEventListener("click", function(){
-
+		var filename = "save.txt";
+		var data = objects.length + "$";
+		data = data + curID + "$";
+		data = data + index + "$";
+		for(var i = 0; i < objects.length; i++){
+			data = data + objects[i].id + "$";
+			data = data + objects[i].vertices + "$";
+			data = data + objects[i].colors + "$";
+			data = data + objects[i].vindex + "$";
+			data = data + objects[i].size + "$";
+		}
+		console.log("logging data\n");
+		console.log(data);
+		const blob = new Blob([data], {type:'text/plain'});
+		if(window.navigator.msSaveOrOpenBlob) {
+			window.navigator.msSaveBlob(blob, filename);
+		}
+		else{
+			const elem = window.document.createElement('a');
+			elem.href = window.URL.createObjectURL(blob);
+			elem.download = filename;        
+			document.body.appendChild(elem);
+			elem.click();        
+			document.body.removeChild(elem);
+		}
 	});
-	
-	loadButton.addEventListener("click", function(){
 
+	loadButton.addEventListener("change", function(){
+		if(loadButton.files.length == 0){
+			console.log("No files selected!\n");
+			return;
+		}
+		var fr = new FileReader();
+		fr.onload = (e) => { 
+			var lines;
+			const file = e.target.result; 
+			lines = file.split(/\$/);
+			for(var i = 0; i < lines.length; i++){
+				lines[i] = lines[i].split(',');
+			}
+			objects = [];
+			undoStack = [];
+			redoStack = [];
+			console.log("logging lines\n");
+			console.log(lines);
+			curID = parseInt(lines[1][0]);
+			index = parseInt(lines[2][0]);
+			//curID = 0;
+			var newObjSize = parseInt(lines[0][0]);
+			for(var i = 3; i < newObjSize*5+3; i+=5){
+				if( lines[i][0] == "" )
+					break;
+				
+				var newID = parseInt(lines[i][0]);
+				var newVertices = parseVerticesMatrix(lines[i+1]);
+				var newColors = parseColorMatrix(lines[i+2]);
+				var newVindex = parseInt(lines[i+3][0]);
+				var newSize = parseInt(lines[i+4][0]);
+				var createdObject = {
+					id: newID,
+					vertices: newVertices,
+					colors: newColors,
+					vindex: newVindex,
+					size: newSize
+				}
+				//objects.push(createdObject);
+				//console.log(createdObject);
+				//createPolygon( newVertices );
+				createPolygonFromInfo( createdObject );
+			}
+			
+			var zoomLoc = gl.getUniformLocation(program, "zoom");	
+			zoom = 1;
+			gl.uniform1f(zoomLoc,zoom);
+			var offsetLoc = gl.getUniformLocation(program, "offset");
+			offset = vec2(0.0,0.0);
+			gl.uniform2fv(offsetLoc,offset);	 
+			render();
+			
+		}; 
+		fr.readAsText(loadButton.files[0]);
 	});
 	
 	
@@ -235,7 +311,7 @@ window.onload = function init(){
 				break;
 			}
 		}
-		else if(event.button == 1){ //Right Click
+		else if(event.button == 1){ //Middle Click
 			isRDrag = false;
 			isMDrag = true;
 			isLDrag = false;
@@ -356,8 +432,17 @@ window.onload = function init(){
 	
 	canvas.addEventListener("wheel", function(event){
 		var zoomBounds = [10,0.1];
-		zoom = Math.max( Math.min( zoom * (1 + (event.deltaY * 0.001)) , zoomBounds[0] ) , zoomBounds[1] );  // 10 > zoom > 0.1		
+		var prevML = translateCoord( event.clientX, event.clientY );
+		zoom = Math.max( Math.min( zoom * (1 + (event.deltaY * 0.001)) , zoomBounds[0] ) , zoomBounds[1] );  // 10 > zoom > 0.1
+		//var ratioChange = zoom / prevZoom;
+		//offset[0] *= ratioChange;
+		//offset[1] *= ratioChange;
 		gl.uniform1f(zoomLoc,zoom);
+		var newML = translateCoord( event.clientX, event.clientY );
+		offset[0] += newML[0] - prevML[0];
+		offset[1] += newML[1] - prevML[1];
+		var offsetLoc = gl.getUniformLocation(program, "offset");
+		gl.uniform2fv(offsetLoc, offset);
 	});
 	
 	canvas.addEventListener("mouseleave", function(event){
@@ -470,7 +555,7 @@ function createTriangle( p1 , p2 ){
 	var createdObject = {
 		id: curID,
 		vertices: [p1,p3,p2],
-		colors: [c,c,c,c],
+		colors: [c,c,c],
 		vindex: index,
 		size: 3
 	}
@@ -478,6 +563,52 @@ function createTriangle( p1 , p2 ){
 	objects.push(createdObject);
 	
 	//Store event for undo/redo
+	addUndo(curID,events.Create,0);
+	var ObjectGhostData = structuredClone(createdObject); 
+	addUndo(curID,events.Create,ObjectGhostData);
+	
+	curID += 1;
+	index += 3;
+}
+
+function createEquitri( p1 , p2 ){
+	
+	//TODO -> needs to be equilateral => a,a,a
+	
+	// |                      |
+	// v placeholder function v
+
+	p3 = vec2((p1[0] + p2[0]) * 0.5, p1[1]);
+	p1 = vec2(p1[0],p2[1]);
+	
+	
+	gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
+
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(p1));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+1), flatten(p3));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+2), flatten(p2));
+
+	gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
+	
+
+	var c = vec4(colors[curColorIndex]);
+
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(c));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index + 1), flatten(c));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index + 2), flatten(c));
+	
+	var createdObject = {
+		id: curID,
+		vertices: [p1,p3,p2],
+		colors: [c,c,c],
+		vindex: index,
+		size: 3
+	}
+	
+	objects.push(createdObject);
+	
+	//Store event for undo/redo
+	addUndo(curID,events.Create,0);
 	var ObjectGhostData = structuredClone(createdObject); 
 	addUndo(curID,events.Create,ObjectGhostData);
 	
@@ -526,15 +657,14 @@ function createPolygon( p ){
 }
 
 function createPolygonFromInfo( object ){
-	
+
 	if(object.vertices.length < 3) return;
-	
-	
+
+
 	gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
 	for(var i = 0; i < object.size ; i += 1){
 		gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index + i), flatten(object.vertices[i]));
 	}
-	
 	//var c = vec4(colors[curColorIndex]);
 	gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
 	var newColors = [];
