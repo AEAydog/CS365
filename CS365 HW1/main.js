@@ -235,6 +235,8 @@ window.onload = function init(){
 				lines[i] = lines[i].split(',');
 			}
 			objects = [];
+			undoStack = [];
+			redoStack = [];
 			console.log("logging lines\n");
 			console.log(lines);
 			curID = parseInt(lines[1][0]);
