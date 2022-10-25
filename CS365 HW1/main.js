@@ -262,6 +262,13 @@ window.onload = function init(){
 				//createPolygon( newVertices );
 				createPolygonFromInfo( createdObject );
 			}
+			
+			var zoomLoc = gl.getUniformLocation(program, "zoom");	
+			zoom = 1;
+			gl.uniform1f(zoomLoc,zoom);
+			var offsetLoc = gl.getUniformLocation(program, "offset");
+			offset = vec2(0.0,0.0);
+			gl.uniform2fv(offsetLoc,offset);	 
 			render();
 			
 		}; 
