@@ -214,7 +214,8 @@ window.onload = function init(){
 			document.body.removeChild(elem);
 		}
 	});
-
+	
+	//	################### LOAD ###################
 	loadButton.addEventListener("change", function(){
 		if(loadButton.files.length == 0){
 			console.log("No files selected!\n");
@@ -243,11 +244,11 @@ window.onload = function init(){
 				if( lines[i][0] == "" )
 					break;
 				
-				var newID = parseInt(lines[i][0]);
+				var newID = parseInt(lines[i]);
 				var newVertices = parseVerticesMatrix(lines[i+1]);
 				var newColors = parseColorMatrix(lines[i+2]);
-				var newVindex = parseInt(lines[i+3][0]);
-				var newSize = parseInt(lines[i+4][0]);
+				var newVindex = parseInt(lines[i+3]);
+				var newSize = parseInt(lines[i+4]);
 				var createdObject = {
 					id: newID,
 					vertices: newVertices,
@@ -328,7 +329,8 @@ window.onload = function init(){
 			isLDrag = true;
 			
 			var selectedPixel = translateCoord(event.clientX, event.clientY);
-			for(var i = 0; i < objects.length; i += 1){
+			//for(var i = 0; i < objects.length; i += 1){
+			for(var i = objects.length - 1; i >= 0; i -= 1){
 				if(pointInPolygon(objects[i].vertices,selectedPixel)){
 					selectedObjectId = objects[i].id;
 					currentFunction = currentFunction == functions.selectMultipleObjects 
@@ -574,7 +576,7 @@ function createTriangle( p1 , p2 ){
 	objects.push(createdObject);
 	
 	//Store event for undo/redo
-	addUndo(curID,events.Create,0);
+	//addUndo(curID,events.Create,0);
 	var ObjectGhostData = structuredClone(createdObject); 
 	addUndo(curID,events.Create,ObjectGhostData);
 	
@@ -635,6 +637,10 @@ function createEquitri( p1 , p2 ){
 		}
 	}
 	
+	var shorter = true; //if true the shorter edge is between p1-p2
+
+
+	
 	
 	gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
 
@@ -662,7 +668,7 @@ function createEquitri( p1 , p2 ){
 	objects.push(createdObject);
 	
 	//Store event for undo/redo
-	addUndo(curID,events.Create,0);
+	//addUndo(curID,events.Create,0);
 	var ObjectGhostData = structuredClone(createdObject); 
 	addUndo(curID,events.Create,ObjectGhostData);
 	
@@ -739,6 +745,42 @@ function createPolygonFromInfo( object ){
 	
 	curID += 1;
 	index += object.vertices.length;
+	
+	return createdObject.id;
+}
+
+function createPolygonFromInfoID( object ){
+
+	if(object.vertices.length < 3) return;
+
+
+	gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
+	for(var i = 0; i < object.size ; i += 1){
+		gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index + i), flatten(object.vertices[i]));
+	}
+	//var c = vec4(colors[curColorIndex]);
+	gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
+	var newColors = [];
+	for(var i = 0; i < object.size ; i += 1){
+		gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index + i), flatten(object.colors[i]));
+	}
+	
+	var createdObject = {
+		id: object.id,
+		vertices: object.vertices,
+		colors: object.colors,
+		vindex: index,
+		size: object.size
+	}
+	
+	objects.push(createdObject);
+	
+	//Store event for undo/redo
+	//var ObjectGhostData = structuredClone(createdObject); 
+	//addUndo(curID,events.Create,ObjectGhostData);
+	
+	//curID += 1;
+	index += object.size;
 	
 	return createdObject.id;
 }
@@ -929,7 +971,7 @@ function redo(){
 		switch(thisEvent.ev){
 			case(events.Create):
 			
-				var nid = createPolygonFromInfo(thisEvent.info);
+				var nid = createPolygonFromInfoID(thisEvent.info);
 
 				//Correct the id of the last element in the stack
 				thisEvent = undoStack.pop();
