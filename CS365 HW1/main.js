@@ -235,8 +235,6 @@ window.onload = function init(){
 			redoStack = [];
 			console.log("logging lines\n");
 			console.log(lines);
-			//curID = parseInt(lines[1][0]);
-			//index = parseInt(lines[2][0]);
 			curID = 0;
 			index = 4;
 			var newObjSize = parseInt(lines[0][0]);
@@ -882,16 +880,16 @@ function updateHighlightBox(points){ //This function finds the smallest rectangl
 	
 }
 
-function deleteObject(ind,isUndo){
+function deleteObject(ind,isRedo){
 	if(1) //If an object is currently selected
 				console.log("deleting" + ind);
 				//DELETE
 				selectedIndex = objects.indexOf(objects.find( obj => {return obj.id === ind } ));
 				
-				if(isUndo){
-					
-				}
 				
+				if(!isRedo){
+					addUndo(ind,events.Delete,objects[selectedIndex]);
+				}
 				
 				gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);	//bind vertex buffer
 				for(var i = 0; i < objects[selectedIndex].vertices.length; i+=1){
@@ -907,7 +905,7 @@ function deleteObject(ind,isUndo){
 				
 				objects.splice(selectedIndex, 1); //remove object from objects array
 				selectedIndex = -1;
-				
+
 				updateHighlightBox();
 				//console.log(objects);
 }
@@ -952,6 +950,9 @@ function undo(){
 				thisEvent.info[1] *= -1;
 				moveObject(thisEvent.objId, thisEvent.info[0], thisEvent.info[1]);
 				break;
+			case(events.Delete):
+				createPolygonFromInfoID(thisEvent.info);
+				break;
 		}
 	}
 }
@@ -974,10 +975,12 @@ function redo(){
 				var nid = createPolygonFromInfoID(thisEvent.info);
 
 				//Correct the id of the last element in the stack
+				/*
 				thisEvent = undoStack.pop();
 				thisEvent.info.id = nid;
 				thisEvent.objId = nid;
-				undoStack.push(thisEvent);
+				*/
+				//undoStack.push(thisEvent);
 				
 				
 				break;
@@ -990,6 +993,9 @@ function redo(){
 				thisEvent.info[1] *= -1;
 				moveObject(thisEvent.objId, thisEvent.info[0], thisEvent.info[1]);
 
+				break;
+			case(events.Delete):
+				deleteObject(thisEvent.objId,true);
 				break;
 		}
 	}
