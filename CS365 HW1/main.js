@@ -30,7 +30,8 @@ const functions = {
 	moveCamera:4,
 	rotateObject:5,
 	selectObject:6,
-	selectMultipleObjects:7
+	selectMultipleObjects:7,
+	equitri:8
 }
 
 //Event Variables & Arrays
@@ -172,7 +173,7 @@ window.onload = function init(){
 				currentFunction = functions.triangle;
 			break;
 			case(2):
-				currentFunction = -1; //Circle
+				currentFunction = functions.equitri;
 			break;
 			case(3):
 				currentFunction = functions.polygon;
@@ -305,6 +306,9 @@ window.onload = function init(){
 					p1 = translateCoord(event.clientX, event.clientY);
 					
 				break;
+				case(functions.equitri):
+					p1 = translateCoord(event.clientX, event.clientY);
+				break;
 				case(functions.polygon):
 					p.push( translateCoord(event.clientX, event.clientY) );
 					
@@ -369,8 +373,13 @@ window.onload = function init(){
 				break;
 				case(functions.triangle):
 					p2 = translateCoord(event.clientX, event.clientY);
-					
+	
 					createTriangle(p1,p2);
+				break;
+				case(functions.equitri):
+					p2 = translateCoord(event.clientX, event.clientY);
+	
+					createEquitri(p1,p2);
 				break;
 			}
 		}
@@ -580,10 +589,49 @@ function createEquitri( p1 , p2 ){
 
 	p3 = vec2((p1[0] + p2[0]) * 0.5, p1[1]);
 	p1 = vec2(p1[0],p2[1]);
-	
-	var shorter = true; //if true the shorter edge is between p1-p2
 
+	var l = Math.abs(p2[0] - p1[0]);
+	var w = Math.abs(p3[1] - p2[1]);
 
+	if(p2[1]<p3[1]){
+		if( (p3[1]-p2[1]) > l ){
+			var hipo = l;
+			var shortEdge = hipo / 2;
+			var newY = Math.sqrt(hipo*hipo - shortEdge*shortEdge);
+				p3[1] = p2[1] + newY;
+		}
+		else{
+			var span = w / Math.sqrt(3);
+			if(p1[0]>p2[0]){
+				p3[0] = p1[0] - span;
+				p2[0] = p1[0] - 2*span;
+			}
+			else{
+				p3[0] = p1[0] + span;
+				p2[0] = p1[0] + 2*span;
+			}
+		}
+	} 
+	else{
+		if( (p2[1]-p3[1]) > l ){
+			var hipo = l;
+			var shortEdge = hipo / 2;
+			var newY = Math.sqrt(hipo*hipo - shortEdge*shortEdge);
+			p3[1] = p2[1] - newY;
+			p3[0] = (p1[0] + p2[0]) * 0.5;
+		}
+		else{
+			var span = w / Math.sqrt(3);
+			if(p1[0]>p2[0]){
+				p3[0] = p1[0] - span;
+				p2[0] = p1[0] - 2*span;
+			}
+			else{
+				p3[0] = p1[0] + span;
+				p2[0] = p1[0] + 2*span;
+			}
+		}
+	}
 	
 	
 	gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
