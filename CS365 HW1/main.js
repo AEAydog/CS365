@@ -228,14 +228,16 @@ window.onload = function init(){
 			for(var i = 0; i < lines.length; i++){
 				lines[i] = lines[i].split(',');
 			}
+			//gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 			objects = [];
 			undoStack = [];
 			redoStack = [];
 			console.log("logging lines\n");
 			console.log(lines);
-			curID = parseInt(lines[1][0]);
-			index = parseInt(lines[2][0]);
-			//curID = 0;
+			//curID = parseInt(lines[1][0]);
+			//index = parseInt(lines[2][0]);
+			curID = 0;
+			index = 4;
 			var newObjSize = parseInt(lines[0][0]);
 			for(var i = 3; i < newObjSize*5+3; i+=5){
 				if( lines[i][0] == "" )
@@ -672,9 +674,6 @@ function createPolygon( p ){
 	
 	if(p.length < 3) return;
 	
-	
-	
-	
 	gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
 	for(var i = 0; i < p.length ; i += 1){
 		gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index + i), flatten(p[i]));
@@ -739,7 +738,7 @@ function createPolygonFromInfo( object ){
 	//addUndo(curID,events.Create,ObjectGhostData);
 	
 	curID += 1;
-	index += object.size;
+	index += object.vertices.length;
 	
 	return createdObject.id;
 }
@@ -1010,7 +1009,7 @@ function render() {
 function parseColorMatrix( colors ){
 	var result = [];
 	for( var i = 0; i < colors.length; i+=4 ){
-		result.push([colors[i], colors[i+1], colors[i+2], colors[i+3]]);
+		result.push([parseFloat(colors[i]), parseFloat(colors[i+1]), parseFloat(colors[i+2]), parseFloat(colors[i+3])]);
 	}
 	return result;
 }
@@ -1018,7 +1017,7 @@ function parseColorMatrix( colors ){
 function parseVerticesMatrix( vertices ){
 	var result = [];
 	for( var i = 0; i < vertices.length; i+=2 ){
-		result.push([vertices[i], vertices[i+1]]);
+		result.push([parseFloat(vertices[i]), parseFloat(vertices[i+1])]);
 	}
 	return result;
 }
