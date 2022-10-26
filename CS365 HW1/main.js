@@ -460,6 +460,7 @@ window.onload = function init(){
 		isLDrag = false;
 		isRDrag = false;
 		isMDrag = false;
+		updateHighlightBox();
 	});
 	
 	window.addEventListener("keydown", function(event){
