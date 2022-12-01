@@ -207,15 +207,14 @@ function randomizeTree() {
         var top = genQueue.shift();
         var parent = top;
         var mark1 = true;
-        //2 to 5 branches from an existing branch
-        var newBranchesCount = 2 + Math.floor(Math.random() * 4);
+        //3 to 5 branches from an existing branch
+        var newBranchesCount = 3 + Math.floor(Math.random() * 3);
         for( let i = 0; i < newBranchesCount; i++ ){
             var m = mat4();
             m = figure[parent].type == 0 ? translate(0.0, figure[parent].height, 0.0) : translate(0.0, figure[parent].height * Math.random(), 0.0);
             m = mult(m, rotate(randomAngle(), 1, 0, 0));
             m = mult(m, rotate(randomAngle(), 0, 1, 0));
             m = mult(m, rotate(randomAngle(), 0, 0, 1));
-            console.log(m);
             figure[numNodes] = createNode( m, branchLvl2, null, null, 2, figure[parent].width*wDev(), figure[parent].height*hDev(), parent, numNodes );
             if( mark1 ){
                 figure[parent].child = numNodes;
