@@ -17,7 +17,12 @@ var lightAmbient = vec4(0.5, 0.5, 0.5, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
-var matColor = vec4(0.55, 0.3, 0.012, 1.0);
+var matColor = vec4(0.5, 0.25, 0.0, 1.0); //Brown
+
+var colors = {
+	normal: vec4(0.5, 0.25, 0.0, 1.0),
+	selected: vec4(0.0,1.0,1.0,1.0)
+}
 
 var materialAmbient = matColor;//vec4( 1.0, 0.8, 0.0, 1.0 );
 var materialDiffuse = matColor;//vec4( 1.0, 0.8, 0.0, 1.0);
@@ -37,7 +42,7 @@ var materialShininess = 1.0;
 //    vec4( 0.5, -0.5, -0.5, 1.0 )
 //];
 
-
+//Tree
 var trunkId = 0;
 var branch1Id = 3;
 var b2uId = 1;
@@ -69,14 +74,36 @@ var hNodes = [];
 
 for( var i=0; i<numNodes; i++) figure[i] = createNode(null, null, null, null, null, null, null, null, null);
 
+var framebuffer;
 var vBuffer;
 var modelViewLoc;
 
 var pointsArray = [];
 var normalsArray = [];
 var ibufferSize;
-
+var toggleShading = 1;
+var isDrawingOffScr = false;
+var color = new Uint8Array(4);
+var selectedID = -1;
 //-------------------------------------------
+
+function bakeColor(){
+
+	materialAmbient = matColor;//vec4( 1.0, 0.8, 0.0, 1.0 );
+	materialDiffuse = matColor;//vec4( 1.0, 0.8, 0.0, 1.0);
+	materialSpecular = matColor;//vec4( 1.0, 0.8, 0.0, 1.0 );
+
+	ambientProduct = mult(lightAmbient, materialAmbient);
+    diffuseProduct = mult(lightDiffuse, materialDiffuse);
+    specularProduct = mult(lightSpecular, materialSpecular);
+	
+	gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"),
+       flatten(ambientProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"),
+       flatten(diffuseProduct) );
+    gl.uniform4fv(gl.getUniformLocation(program, "specularProduct"), 
+       flatten(specularProduct) );	
+}
 
 function scale4(a, b, c) {
    var result = mat4();
@@ -264,12 +291,34 @@ instanceMatrix = mult(instanceMatrix, scale4( figure[Id].width, figure[Id].heigh
 gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix));
 */
 
+function Draw(Id){
+	if(isDrawingOffScr){
+		gl.uniform1i(gl.getUniformLocation(program, "i"), Id);
+	}
+	
+	if(selectedID == Id){
+		matColor = colors.selected;
+		bakeColor();
+		
+		gl.drawArrays(gl.TRIANGLES, 0, ibufferSize);
+		
+		matColor = colors.normal;
+		bakeColor();
+	}
+	else{
+		gl.drawArrays(gl.TRIANGLES, 0, ibufferSize);
+	}
+}
+
 function trunk(Id) {
     instanceMatrix = mult(modelViewMatrix, translate(0.0, 0.5 * figure[Id].height, 0.0) );
     instanceMatrix = mult(instanceMatrix, scale4( figure[Id].width, figure[Id].height, figure[Id].width));
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix));
     //for(var i =0; i<6; i++) gl.drawArrays(gl.TRIANGLE_FAN, 4*i, 4);
-	gl.drawArrays(gl.TRIANGLES, 0, ibufferSize);
+	
+	Draw(Id);
+	
+	
 }
 
 function branchStd(Id) {
@@ -277,6 +326,9 @@ function branchStd(Id) {
     instanceMatrix = mult(instanceMatrix, scale4( figure[Id].width, figure[Id].height, figure[Id].width));
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix));
     //for(var i =0; i<6; i++) gl.drawArrays(gl.TRIANGLE_FAN, 4*i, 4);
+	
+	Draw(Id);
+	
 	gl.drawArrays(gl.TRIANGLES, 0, ibufferSize);
 }
 
@@ -285,6 +337,9 @@ function branchLvl1(Id) {
     instanceMatrix = mult(instanceMatrix, scale4( figure[Id].width, figure[Id].height, figure[Id].width));
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix));
     //for(var i =0; i<6; i++) gl.drawArrays(gl.TRIANGLE_FAN, 4*i, 4);
+	
+	Draw(Id);
+	
 	gl.drawArrays(gl.TRIANGLES, 0, ibufferSize);
 }
 
@@ -293,7 +348,18 @@ function branchLvl2(Id) {
     instanceMatrix = mult(instanceMatrix, scale4( figure[Id].width, figure[Id].height, figure[Id].width));
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix));
     //for(var i =0; i<6; i++) gl.drawArrays(gl.TRIANGLE_FAN, 4*i, 4);
+	
+	Draw(Id);
+	
 	gl.drawArrays(gl.TRIANGLES, 0, ibufferSize);
+}
+
+function idColor(x){
+	var r,g,b;
+	r = int(mod(x, 255));
+	g = int(x / 255);
+	b = int(x / (255 * 255));
+	return vec3( r / 255.0, g / 255.0, b / 255.0, 1.0 );
 }
 
 function quad(a, b, c, d) {
@@ -314,9 +380,10 @@ function cube()
     quad( 5, 4, 0, 1 );
 }
 
-function createTube(n, h){
+function createTube(n, h, s){
 	
 	var scalingfactor = [ 0.5, 1 / (h-1) ];
+	var ch =  1 - s;
 	
 	var indices = [];
 	var vertices2 = [];
@@ -325,12 +392,12 @@ function createTube(n, h){
 	
 	for(var j = 0 ; j < h ; j++){
 		for(var i = 0 ; i < n ; i++){
-			vertices2.push(vec4(Math.cos(i * 2 * Math.PI / n), j - (h -1) / 2 ,Math.sin(i * 2 * Math.PI / n),1.0));
+			vertices2.push(vec4( (1- ch * j/(h-1)) * Math.cos(i * 2 * Math.PI / n), j - (h -1) / 2 , (1- ch * j/(h-1)) * Math.sin(i * 2 * Math.PI / n),1.0));
 			
 		}
 	}
 	vertices2.push(vec4(0.0, -(h - 1) / 2,0.0,1.0)); // root center
-	vertices2.push(vec4(0.0, (h - 1) / 2 ,0.0,1.0)); // roof center
+	vertices2.push(vec4(0.0, (h - 0.6) / 2 ,0.0,1.0)); // roof center
 	var rootind = n * h;
 	var roofind = rootind + 1;
 	
@@ -413,16 +480,22 @@ window.onload = function init() {
     program = initShaders( gl, "vertex-shader", "fragment-shader");
     
     gl.useProgram( program);
-
-    instanceMatrix = mat4();
+	
+	gl.enable(gl.DEPTH_TEST);	
     
-    var zoom = 25.0;
-    projectionMatrix = ortho(-zoom,zoom,-zoom, zoom,-zoom,zoom);
+	instanceMatrix = mat4();
+    
+    var zoom = 15.0;
+    projectionMatrix = ortho(-zoom,zoom, -zoom * 0.3, zoom * 1.7,-zoom,zoom);
     modelViewMatrix = mat4();
 
     ambientProduct = mult(lightAmbient, materialAmbient);
     diffuseProduct = mult(lightDiffuse, materialDiffuse);
     specularProduct = mult(lightSpecular, materialSpecular);
+	
+	console.log(toggleShading);
+	
+	
 	
 	gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"),
        flatten(ambientProduct));
@@ -438,12 +511,16 @@ window.onload = function init() {
     gl.uniformMatrix4fv(gl.getUniformLocation( program, "modelViewMatrix"), false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv( gl.getUniformLocation( program, "projectionMatrix"), false, flatten(projectionMatrix) );
     
+	gl.uniform1i(gl.getUniformLocation(program, "i"),selectedID);
+	gl.uniform1i(gl.getUniformLocation(program, "li"), toggleShading);
 	
     modelViewMatrixLoc = gl.getUniformLocation(program, "modelViewMatrix")
     
+	
+	
     //cube();
     
-	createTube(12,4);
+	createTube(12,4, 0.6);
 	
     var nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
@@ -469,9 +546,46 @@ window.onload = function init() {
         theta[trunkId ] = event.srcElement.value;
         initNodes(trunkId);
     };
-
+	
+	
+	document.getElementById("checkbox0").onchange = function() {
+        toggleShading = event.target.checked ? 1 : 0;
+		console.log(toggleShading);
+		gl.uniform1i(gl.getUniformLocation(program, "li"), toggleShading); // ######################### CALISMIYOR
+		traverse[trunkId];
+    };
+	
+	canvas.addEventListener("mousedown", function(event){
+        //Setup
+        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+        gl.clear( gl.COLOR_BUFFER_BIT);
+		//Draw
+		isDrawingOffScr = true;
+		traverse(trunkId);
+        
+		//input
+        var x = event.clientX;
+        var y = canvas.height -event.clientY;
+		
+        gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, color);
+		console.log(color);
+		
+        if(color[1] == 128) selectedID = -1;
+		else{
+			selectedID = color[0];
+		}
+		console.log(selectedID);
+		
+		//Cleanup
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		isDrawingOffScr = false
+        gl.uniform1i(gl.getUniformLocation(program, "i"), -1);
+        gl.clear( gl.COLOR_BUFFER_BIT );
+		traverse(trunkId);
+    }); 
     //for(i=0; i<numNodes; i++) initNodes(i);
-    
+   
+	
     randomizeTree();
 
     render();
@@ -479,7 +593,6 @@ window.onload = function init() {
 
 
 var render = function() {
-
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         traverse(trunkId);
         requestAnimFrame(render);

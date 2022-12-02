@@ -1,11 +1,47 @@
 <html>
+<style>
+*{
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 600;
+}
 
+canvas{
+	
+}
+
+html, body {margin: 0; height: 100%; overflow: hidden}
+
+.canvas-container{
+	border: solid black 1px;
+}
+
+.menu-container{
+	display: flex;
+	background-color: #f0f0f0;
+}
+
+.subdiv{
+	margin: 10px 0px 10px 10px;
+	padding: 10px;
+
+
+	display: flex;
+	flex-direction: column;
+	align-items:center;
+
+	background-color: #e0e0e0;
+}
+
+</style>
 
 <script id="vertex-shader" type="x-shader/x-vertex">
+
+//precision highp float;
 
 attribute  vec4 vPosition;
 attribute  vec3 vNormal;
 varying vec4 fColor;
+varying vec4 fcolorOrig;
 
 uniform vec4 ambientProduct, diffuseProduct, specularProduct;
 uniform mat4 modelViewMatrix;
@@ -15,7 +51,7 @@ uniform float shininess;
 
 void main()
 {
-
+	//fcolorOrig = fcolor;
     
     vec3 pos = -(modelViewMatrix * vPosition).xyz;
     vec3 light = lightPosition.xyz;
@@ -53,16 +89,27 @@ void main()
 
 <script id="fragment-shader" type="x-shader/x-fragment">
 
-precision mediump float;
+precision highp float;
 
-//varying int i;
-
+uniform int li;
+uniform int i;
 varying vec4 fColor;
 
 void
 main()
 {
-    gl_FragColor = fColor;
+    vec4 c[2];
+    c[0] = fColor;
+    c[1] = vec4(0.5, 0.25, 0.0, 1.0);
+    
+	if(i == -1){
+		if(li==1) gl_FragColor = c[0];
+		else if(li==0) gl_FragColor = c[1];
+	}
+	else{
+		gl_FragColor = vec4(float(i) / 255.0, 0.0, 0.0 , 1.0);
+    }
+	
 }
 </script>
 
@@ -73,12 +120,7 @@ main()
 <script type="text/javascript" src="Common/MV.js"></script>
 <script type="text/javascript" src="main.js"></script>
 
-<div id="slider0">
-tree trunk angle -180 <input id="slide" type="range"
- min="-180" max="180" step="10" value="0"
-  />
- 180
-</div><br/>
+
 
 <!--
 <div id="slider1">
@@ -140,8 +182,24 @@ b5l -180 <input id="slide" type="range"
 -->
 
 <body>
-<canvas id="gl-canvas" width="1024"" height="1024"
+<div class = "canvasdiv">
+<canvas id="gl-canvas" width="600" height="600"
 Oops ... your browser doesn't support the HTML5 canvas element
 </canvas>
+</div>
+
+<div class = "UIdiv">
+<div id="slider0">
+tree trunk angle -180 <input id="slide" type="range"
+ min="-180" max="180" step="10" value="0"
+  />
+ 180
+</div><br/>
+<div id="checkbox0">
+ Lighting <input id="checkbox" type="checkbox" value = "0" checked = "true";
+  />
+</div><br/>
+</div>
+
 </body>
 </html>
