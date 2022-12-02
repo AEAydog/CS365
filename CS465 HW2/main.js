@@ -3,6 +3,7 @@ var canvas;
 var gl;
 var program;
 
+//Matrices
 var projectionMatrix; 
 var modelViewMatrix;
 
@@ -10,17 +11,31 @@ var instanceMatrix;
 
 var modelViewMatrixLoc;
 
-var vertices = [
+//Lighting and shading
+var lightPosition = vec4(-100.0,-100.0, -100.0, 0.0 );
+var lightAmbient = vec4(0.5, 0.5, 0.5, 1.0 );
+var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
+var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
-    vec4( -0.5, -0.5,  0.5, 1.0 ),
-    vec4( -0.5,  0.5,  0.5, 1.0 ),
-    vec4( 0.5,  0.5,  0.5, 1.0 ),
-    vec4( 0.5, -0.5,  0.5, 1.0 ),
-    vec4( -0.5, -0.5, -0.5, 1.0 ),
-    vec4( -0.5,  0.5, -0.5, 1.0 ),
-    vec4( 0.5,  0.5, -0.5, 1.0 ),
-    vec4( 0.5, -0.5, -0.5, 1.0 )
-];
+var matColor = vec4(0.55, 0.3, 0.012, 1.0);
+
+var materialAmbient = matColor;//vec4( 1.0, 0.8, 0.0, 1.0 );
+var materialDiffuse = matColor;//vec4( 1.0, 0.8, 0.0, 1.0);
+var materialSpecular = matColor;//vec4( 1.0, 0.8, 0.0, 1.0 );
+var materialShininess = 1.0;
+
+
+//var vertices = [
+//
+//    vec4( -0.5, -0.5,  0.5, 1.0 ),
+//    vec4( -0.5,  0.5,  0.5, 1.0 ),
+//    vec4( 0.5,  0.5,  0.5, 1.0 ),
+//    vec4( 0.5, -0.5,  0.5, 1.0 ),
+//    vec4( -0.5, -0.5, -0.5, 1.0 ),
+//    vec4( -0.5,  0.5, -0.5, 1.0 ),
+//    vec4( 0.5,  0.5, -0.5, 1.0 ),
+//    vec4( 0.5, -0.5, -0.5, 1.0 )
+//];
 
 
 var trunkId = 0;
@@ -58,6 +73,8 @@ var vBuffer;
 var modelViewLoc;
 
 var pointsArray = [];
+var normalsArray = [];
+var ibufferSize;
 
 //-------------------------------------------
 
@@ -195,6 +212,7 @@ function randomizeTree() {
 
     //create at least one LVL2 Branch
     //type2
+    //2n
     //2nd
     m = mat4();
     m = translate(0.0, figure[numNodes-1].height, 0.0);
@@ -210,7 +228,8 @@ function randomizeTree() {
         //3 to 5 branches from an existing branch
         var newBranchesCount = 3 + Math.floor(Math.random() * 3);
         for( let i = 0; i < newBranchesCount; i++ ){
-            var m = mat4();
+ 
+			var m = mat4();
             m = figure[parent].type == 0 ? translate(0.0, figure[parent].height, 0.0) : translate(0.0, figure[parent].height * Math.random(), 0.0);
             m = mult(m, rotate(randomAngle(), 1, 0, 0));
             m = mult(m, rotate(randomAngle(), 0, 1, 0));
@@ -249,28 +268,32 @@ function trunk(Id) {
     instanceMatrix = mult(modelViewMatrix, translate(0.0, 0.5 * figure[Id].height, 0.0) );
     instanceMatrix = mult(instanceMatrix, scale4( figure[Id].width, figure[Id].height, figure[Id].width));
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix));
-    for(var i =0; i<6; i++) gl.drawArrays(gl.TRIANGLE_FAN, 4*i, 4);
+    //for(var i =0; i<6; i++) gl.drawArrays(gl.TRIANGLE_FAN, 4*i, 4);
+	gl.drawArrays(gl.TRIANGLES, 0, ibufferSize);
 }
 
 function branchStd(Id) {
     instanceMatrix = mult(modelViewMatrix, translate(0.0, 0.5 * figure[Id].height, 0.0) );
     instanceMatrix = mult(instanceMatrix, scale4( figure[Id].width, figure[Id].height, figure[Id].width));
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix));
-    for(var i =0; i<6; i++) gl.drawArrays(gl.TRIANGLE_FAN, 4*i, 4);
+    //for(var i =0; i<6; i++) gl.drawArrays(gl.TRIANGLE_FAN, 4*i, 4);
+	gl.drawArrays(gl.TRIANGLES, 0, ibufferSize);
 }
 
 function branchLvl1(Id) {
     instanceMatrix = mult(modelViewMatrix, translate(0.0, 0.5 * figure[Id].height, 0.0) );
     instanceMatrix = mult(instanceMatrix, scale4( figure[Id].width, figure[Id].height, figure[Id].width));
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix));
-    for(var i =0; i<6; i++) gl.drawArrays(gl.TRIANGLE_FAN, 4*i, 4);
+    //for(var i =0; i<6; i++) gl.drawArrays(gl.TRIANGLE_FAN, 4*i, 4);
+	gl.drawArrays(gl.TRIANGLES, 0, ibufferSize);
 }
 
 function branchLvl2(Id) {
     instanceMatrix = mult(modelViewMatrix, translate(0.0, 0.5 * figure[Id].height, 0.0) );
     instanceMatrix = mult(instanceMatrix, scale4( figure[Id].width, figure[Id].height, figure[Id].width));
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix));
-    for(var i =0; i<6; i++) gl.drawArrays(gl.TRIANGLE_FAN, 4*i, 4);
+    //for(var i =0; i<6; i++) gl.drawArrays(gl.TRIANGLE_FAN, 4*i, 4);
+	gl.drawArrays(gl.TRIANGLES, 0, ibufferSize);
 }
 
 function quad(a, b, c, d) {
@@ -291,6 +314,88 @@ function cube()
     quad( 5, 4, 0, 1 );
 }
 
+function createTube(n, h){
+	
+	var scalingfactor = [ 0.5, 1 / (h-1) ];
+	
+	var indices = [];
+	var vertices2 = [];
+	var vertices = [];
+	ibufferSize = 6 * n * h; //how many indices will be pushed for the polygon to the ibufffer
+	
+	for(var j = 0 ; j < h ; j++){
+		for(var i = 0 ; i < n ; i++){
+			vertices2.push(vec4(Math.cos(i * 2 * Math.PI / n), j - (h -1) / 2 ,Math.sin(i * 2 * Math.PI / n),1.0));
+			
+		}
+	}
+	vertices2.push(vec4(0.0, -(h - 1) / 2,0.0,1.0)); // root center
+	vertices2.push(vec4(0.0, (h - 1) / 2 ,0.0,1.0)); // roof center
+	var rootind = n * h;
+	var roofind = rootind + 1;
+	
+	console.log(vertices2);
+	
+	//Base indices
+	for(var a = 0 ; a < n ; a++){
+			indices.push(rootind);
+			indices.push((a + 0) % n);
+			indices.push((a + 1) % n);
+		}
+	
+	//Side indices
+	for(var j = 0 ; j < h - 1  ; j++){
+		for(var a = 0 ; a < n ; a++){
+			indices.push((a + 0) % n + n * (j));
+			indices.push((a + 0) % n + n * (j + 1));
+			indices.push((a + 1) % n + n * (j + 1));
+			indices.push((a + 0) % n + n * (j));
+			indices.push((a + 1) % n + n * (j + 1));
+			indices.push((a + 1) % n + n * (j));
+		}
+	}
+	
+	//Roof indices
+	for(var a = 0 ; a < n ; a++){
+			indices.push(roofind);
+			indices.push((a + 1) % n + n * (h - 1));
+			indices.push((a + 0) % n + n * (h - 1));
+		}
+	
+	//construct all vertices from indices
+	for(var p = 0 ; p < ibufferSize; p++){
+		
+		vertices.push(vertices2[indices[p]]);
+	}
+	
+	
+	
+	//Set Normals
+	for(var p = 0 ; p < ibufferSize - 1; p += 3){
+		var p1 = vertices[p];
+		var p2 = vertices[p + 1];
+		var p3 = vertices[p + 2];
+		
+		var t1 = subtract(p1, p2);
+		var t2 = subtract(p3, p2);
+		var normal = cross(t1, t2);
+		var normal = vec3(normal);
+		normal = normalize(normal);
+		console.log(normal);
+		normalsArray.push(normal);
+		normalsArray.push(normal);
+		normalsArray.push(normal);
+	}
+	
+	//Rescale the tube for dimensions (1,1,1) with origin (0,0,0)
+	for(var p = 0 ; p < ibufferSize; p ++){
+		pt = vertices[p];
+		vertices[p] = vec4(pt[0] * scalingfactor[0], pt[1] * scalingfactor[1], pt[2] * scalingfactor[0] , 1.0); 
+	}
+	
+	pointsArray = vertices;
+	
+}
 
 window.onload = function init() {
 
@@ -315,14 +420,39 @@ window.onload = function init() {
     projectionMatrix = ortho(-zoom,zoom,-zoom, zoom,-zoom,zoom);
     modelViewMatrix = mat4();
 
-        
+    ambientProduct = mult(lightAmbient, materialAmbient);
+    diffuseProduct = mult(lightDiffuse, materialDiffuse);
+    specularProduct = mult(lightSpecular, materialSpecular);
+	
+	gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"),
+       flatten(ambientProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"),
+       flatten(diffuseProduct) );
+    gl.uniform4fv(gl.getUniformLocation(program, "specularProduct"), 
+       flatten(specularProduct) );	
+    gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), 
+       flatten(lightPosition) );  
+    gl.uniform1f(gl.getUniformLocation(program, 
+       "shininess"),materialShininess);
+    
     gl.uniformMatrix4fv(gl.getUniformLocation( program, "modelViewMatrix"), false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv( gl.getUniformLocation( program, "projectionMatrix"), false, flatten(projectionMatrix) );
     
+	
     modelViewMatrixLoc = gl.getUniformLocation(program, "modelViewMatrix")
     
-    cube();
-        
+    //cube();
+    
+	createTube(12,4);
+	
+    var nBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
+    
+    var vNormal = gl.getAttribLocation( program, "vNormal" );
+    gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vNormal );
+    
     vBuffer = gl.createBuffer();
         
     gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
@@ -332,6 +462,9 @@ window.onload = function init() {
     gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vPosition );
     
+	
+	
+	
     document.getElementById("slider0").onchange = function() {
         theta[trunkId ] = event.srcElement.value;
         initNodes(trunkId);
@@ -347,7 +480,7 @@ window.onload = function init() {
 
 var render = function() {
 
-        gl.clear( gl.COLOR_BUFFER_BIT );
+        gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         traverse(trunkId);
         requestAnimFrame(render);
 }
