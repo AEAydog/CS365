@@ -62,8 +62,6 @@ var branchStdWidth = 0.4;
 var numNodes = 4;
 var angle = 0;
 
-var theta = [0, 0, 0, 0];
-
 var stack = [];
 
 var figure = [];
@@ -165,69 +163,38 @@ function angleToRadian(angle){
     return (angle * (Math.PI / 180.0));
 }
 
-function initNodes(Id, thetaI) {
-
+function changeCamera(theta) {
         var m = mat4();
-        
-        switch(figure[Id].type) {
-        
-        case trunkId:
-        
-        m = rotate(theta[Id], 0, 1, 0 );
-        figure[Id].transform = m;
-        break;
+        m = rotate(theta, 0, 1, 0 );
+        figure[0].transform = m;
+}
 
-        default:
-            var m = mat4();
-            switch(thetaI.type){
-                case "x":
-                    figure[Id].tx = thetaI.theta;
-                break;
-                case "y":
-                    figure[Id].ty = thetaI.theta;
-                break;
-                case "z":
-                    figure[Id].tz = thetaI.theta;
-                break;
-            }
-            m = translate(0.0, figure[Id].placement, 0.0);
-            m = mult(m, rotate(figure[Id].tx, 1, 0, 0));
-            m = mult(m, rotate(figure[Id].ty, 0, 1, 0));
-            m = mult(m, rotate(figure[Id].tz, 0, 0, 1));
-            figure[Id].transform = m;
-        break;
+function changeNodeAngle(Id, thetaI){
 
-        //unused
-        /*
-        case branch1Id:
-        m = translate(0.0, trunkHeight+0.5*branchStdHeight, 0.0);
-        m = mult(m, rotate(theta[Id], 1, 0, 0))
-        m = mult(m, translate(0.0, -0.5*branchStdHeight, 0.0));
-        figure[Id].transform = m;
+    var m = mat4();
+    switch(thetaI.type){
+        case "x":
+            figure[Id].tx = thetaI.theta;
         break;
-        
-        
-        case b2uId:
-        
-        m = translate(0.0, figure[figure[Id].parent].height, 0.0);
-        m = mult(m, rotate(0, 1, 0, 0));
-        figure[Id].transform = m;
+        case "y":
+            figure[Id].ty = thetaI.theta;
         break;
-        
-        case b2lId:
-
-        m = translate(0.0, figure[figure[Id].parent].height, 0.0);
-        m = mult(m, rotate(0, 1, 0, 0));
-        figure[Id].transform = m;
+        case "z":
+            figure[Id].tz = thetaI.theta;
         break;
-        */
     }
+    m = translate(0.0, figure[Id].placement, 0.0);
+    m = mult(m, rotate(figure[Id].tx, 1, 0, 0));
+    m = mult(m, rotate(figure[Id].ty, 0, 1, 0));
+    m = mult(m, rotate(figure[Id].tz, 0, 0, 1));
+    figure[Id].transform = m;
+
 }
 
 
 function randomizeTree() {
 
-    //createNode(transform, render, sibling, child, type, width, height, parent)
+    //createNode(transform, render, sibling, child, type, width, height, parent, id, angle x, y, z, placement on parent)
     /*
         randomize trunk height and width
         anything branching from a base is:
@@ -239,47 +206,12 @@ function randomizeTree() {
     numNodes = 0;
     trunkHeight = 10.0 + Math.random() * 2;
     trunkWidth = 1.0 + Math.random() * 0.5 ;
-    //create Trunk
-    //type0
-    //0th
+    
     var m = mat4();
     m = rotate(0, 0, 1, 0 );
     figure[numNodes] = createNode( m, trunk, null, null, 0, trunkWidth, trunkHeight, null, numNodes, 0, 0, 0, 0);
     genQueue.push(numNodes);
     numNodes++;
-
-    /*
-    //create at least one Standalone Branch
-    //type3
-    //1st
-    m = mat4();
-    m = translate(0.0, trunkHeight, 0.0);
-    m = mult(m, rotate(randomAngle(), 1, 0, 0));
-    figure[numNodes] = createNode( m, branchStd, numNodes+1, null, 3, trunkWidth*wDev(), trunkHeight*hDev());
-    numNodes++;
-    */
-
-    /*
-    //create at least one LVL1 Branch
-    //type1
-    //1st
-    m = mat4();
-    m = translate(0.0, trunkHeight, 0.0);
-    m = mult(m, rotate(randomAngle(), 1, 0, 0));
-    figure[numNodes] = createNode( m, branchLvl1, null, numNodes+1, 1, trunkWidth*wDev(), trunkHeight*hDev(), numNodes-1, numNodes);
-    genStack.push(numNodes);
-    numNodes++;
-
-    //create at least one LVL2 Branch
-    //type2
-    //2n
-    //2nd
-    m = mat4();
-    m = translate(0.0, figure[numNodes-1].height, 0.0);
-    m = mult(m, rotate(randomAngle(), 1, 0, 0));
-    figure[numNodes] = createNode( m, branchLvl2, null, null, 2, figure[numNodes-1].width*wDev(), figure[numNodes-1].height*hDev(), numNodes-1, numNodes);
-    genStack.push(numNodes);
-    numNodes++;*/
 
     while( genQueue.length > 0 && numNodes < maxBranches ){
         var top = genQueue.shift();
@@ -580,29 +512,29 @@ window.onload = function init() {
 	
 	
     document.getElementById("slider0").onchange = function() {
-        theta[trunkId] = event.srcElement.value;
-        initNodes(trunkId, 0);
+        var tempTheta = event.srcElement.value;
+        changeCamera(tempTheta);
     };
 
     document.getElementById("slider1").onchange = function() {
         var tempTheta = event.srcElement.value;
         var tempAngle = angleChange(tempTheta, "x");
         if(selectedID != -1)
-            initNodes(selectedID, tempAngle);
+            changeNodeAngle(selectedID, tempAngle);
     };
 
     document.getElementById("slider2").onchange = function() {
         var tempTheta = event.srcElement.value;
         var tempAngle = angleChange(tempTheta, "y");
         if(selectedID != -1)
-            initNodes(selectedID, tempAngle);
+            changeNodeAngle(selectedID, tempAngle);
     };
 
     document.getElementById("slider3").onchange = function() {
         var tempTheta = event.srcElement.value;
         var tempAngle = angleChange(tempTheta, "z");
         if(selectedID != -1)
-            initNodes(selectedID, tempAngle);
+            changeNodeAngle(selectedID, tempAngle);
     };
 	
 	
