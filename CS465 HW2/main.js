@@ -72,7 +72,7 @@ var figure = [];
 var hNodes = [];
 
 
-for( var i=0; i<numNodes; i++) figure[i] = createNode(null, null, null, null, null, null, null, null, null);
+for( var i=0; i<numNodes; i++) figure[i] = createNode(null, null, null, null, null, null, null, null, null, null, null, null, null);
 
 var framebuffer;
 var vBuffer;
@@ -116,7 +116,7 @@ function scale4(a, b, c) {
 //--------------------------------------------
 
 
-function createNode(transform, render, sibling, child, type, width, height, parent, id){
+function createNode(transform, render, sibling, child, type, width, height, parent, id, tx, ty, tz, placement){
     var node = {
     transform: transform,
     render: render,
@@ -127,8 +127,20 @@ function createNode(transform, render, sibling, child, type, width, height, pare
     height: height,
     parent: parent,
     id: id,
+    tx: tx,
+    ty: ty,
+    tz: tz,
+    placement: placement,
     }
     return node;
+}
+
+function angleChange(theta, type){
+    var angle = {
+        theta: theta,
+        type: type,
+    }
+    return angle;
 }
 
 function wDev() {
@@ -153,7 +165,7 @@ function angleToRadian(angle){
     return (angle * (Math.PI / 180.0));
 }
 
-function initNodes(Id) {
+function initNodes(Id, thetaI) {
 
         var m = mat4();
         
@@ -165,7 +177,28 @@ function initNodes(Id) {
         figure[Id].transform = m;
         break;
 
+        default:
+            var m = mat4();
+            switch(thetaI.type){
+                case "x":
+                    figure[Id].tx = thetaI.theta;
+                break;
+                case "y":
+                    figure[Id].ty = thetaI.theta;
+                break;
+                case "z":
+                    figure[Id].tz = thetaI.theta;
+                break;
+            }
+            m = translate(0.0, figure[Id].placement, 0.0);
+            m = mult(m, rotate(figure[Id].tx, 1, 0, 0));
+            m = mult(m, rotate(figure[Id].ty, 0, 1, 0));
+            m = mult(m, rotate(figure[Id].tz, 0, 0, 1));
+            figure[Id].transform = m;
+        break;
+
         //unused
+        /*
         case branch1Id:
         m = translate(0.0, trunkHeight+0.5*branchStdHeight, 0.0);
         m = mult(m, rotate(theta[Id], 1, 0, 0))
@@ -187,7 +220,7 @@ function initNodes(Id) {
         m = mult(m, rotate(0, 1, 0, 0));
         figure[Id].transform = m;
         break;
-    
+        */
     }
 }
 
@@ -211,7 +244,7 @@ function randomizeTree() {
     //0th
     var m = mat4();
     m = rotate(0, 0, 1, 0 );
-    figure[numNodes] = createNode( m, trunk, null, null, 0, trunkWidth, trunkHeight, null, numNodes);
+    figure[numNodes] = createNode( m, trunk, null, null, 0, trunkWidth, trunkHeight, null, numNodes, 0, 0, 0, 0);
     genQueue.push(numNodes);
     numNodes++;
 
@@ -257,11 +290,15 @@ function randomizeTree() {
         for( let i = 0; i < newBranchesCount; i++ ){
  
 			var m = mat4();
-            m = figure[parent].type == 0 ? translate(0.0, figure[parent].height, 0.0) : translate(0.0, figure[parent].height * Math.random(), 0.0);
-            m = mult(m, rotate(randomAngle(), 1, 0, 0));
-            m = mult(m, rotate(randomAngle(), 0, 1, 0));
-            m = mult(m, rotate(randomAngle(), 0, 0, 1));
-            figure[numNodes] = createNode( m, branchLvl2, null, null, 2, figure[parent].width*wDev(), figure[parent].height*hDev(), parent, numNodes );
+            var randPlacement = figure[parent].type == 0 ? figure[parent].height : figure[parent].height * Math.random();
+            var randX = randomAngle();
+            var randY = randomAngle();
+            var randZ = randomAngle();
+            m = translate(0.0, randPlacement, 0.0);
+            m = mult(m, rotate(randX, 1, 0, 0));
+            m = mult(m, rotate(randY, 0, 1, 0));
+            m = mult(m, rotate(randZ, 0, 0, 1));
+            figure[numNodes] = createNode( m, branchLvl2, null, null, 2, figure[parent].width*wDev(), figure[parent].height*hDev(), parent, numNodes, randX, randY, randZ, randPlacement );
             if( mark1 ){
                 figure[parent].child = numNodes;
             }
@@ -401,7 +438,7 @@ function createTube(n, h, s){
 	var rootind = n * h;
 	var roofind = rootind + 1;
 	
-	console.log(vertices2);
+	//console.log(vertices2);
 	
 	//Base indices
 	for(var a = 0 ; a < n ; a++){
@@ -448,7 +485,7 @@ function createTube(n, h, s){
 		var normal = cross(t1, t2);
 		var normal = vec3(normal);
 		normal = normalize(normal);
-		console.log(normal);
+		//console.log(normal);
 		normalsArray.push(normal);
 		normalsArray.push(normal);
 		normalsArray.push(normal);
@@ -493,7 +530,7 @@ window.onload = function init() {
     diffuseProduct = mult(lightDiffuse, materialDiffuse);
     specularProduct = mult(lightSpecular, materialSpecular);
 	
-	console.log(toggleShading);
+	console.log("Shading: " + toggleShading);
 	
 	
 	
@@ -543,14 +580,35 @@ window.onload = function init() {
 	
 	
     document.getElementById("slider0").onchange = function() {
-        theta[trunkId ] = event.srcElement.value;
-        initNodes(trunkId);
+        theta[trunkId] = event.srcElement.value;
+        initNodes(trunkId, 0);
+    };
+
+    document.getElementById("slider1").onchange = function() {
+        var tempTheta = event.srcElement.value;
+        var tempAngle = angleChange(tempTheta, "x");
+        if(selectedID != -1)
+            initNodes(selectedID, tempAngle);
+    };
+
+    document.getElementById("slider2").onchange = function() {
+        var tempTheta = event.srcElement.value;
+        var tempAngle = angleChange(tempTheta, "y");
+        if(selectedID != -1)
+            initNodes(selectedID, tempAngle);
+    };
+
+    document.getElementById("slider3").onchange = function() {
+        var tempTheta = event.srcElement.value;
+        var tempAngle = angleChange(tempTheta, "z");
+        if(selectedID != -1)
+            initNodes(selectedID, tempAngle);
     };
 	
 	
 	document.getElementById("checkbox0").onchange = function() {
         toggleShading = event.target.checked ? 1 : 0;
-		console.log(toggleShading);
+		console.log("Shading: " + toggleShading);
 		gl.uniform1i(gl.getUniformLocation(program, "li"), toggleShading); // ######################### CALISMIYOR
 		traverse[trunkId];
     };
@@ -568,13 +626,27 @@ window.onload = function init() {
         var y = canvas.height -event.clientY;
 		
         gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, color);
-		console.log(color);
+		console.log("Color: " + color);
 		
-        if(color[1] == 128) selectedID = -1;
+        if(color[1] == 128){
+            document.getElementById("slider1").style.visibility="hidden";
+            document.getElementById("slider2").style.visibility="hidden";
+            document.getElementById("slider3").style.visibility="hidden";
+            selectedID = -1;
+        }
 		else{
 			selectedID = color[0];
+            document.getElementById("slider1").style.visibility="visible";
+            console.log(figure[selectedID].tx);
+            document.getElementById("slide1").value=figure[selectedID].tx;
+            document.getElementById("slider2").style.visibility="visible";
+            console.log(figure[selectedID].ty);
+            document.getElementById("slide2").value=figure[selectedID].ty;
+            console.log(figure[selectedID].tz);
+            document.getElementById("slider3").style.visibility="visible";
+            document.getElementById("slide3").value=figure[selectedID].tz;
 		}
-		console.log(selectedID);
+		console.log("Selected: " + selectedID);
 		
 		//Cleanup
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -582,10 +654,8 @@ window.onload = function init() {
         gl.uniform1i(gl.getUniformLocation(program, "i"), -1);
         gl.clear( gl.COLOR_BUFFER_BIT );
 		traverse(trunkId);
-    }); 
-    //for(i=0; i<numNodes; i++) initNodes(i);
+    });
    
-	
     randomizeTree();
 
     render();

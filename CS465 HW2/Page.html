@@ -1,4 +1,6 @@
-<html>
+<!DOCTYPE html>
+<html style= "background-color: #ffffff">
+<head>
 <style>
 *{
   font-family: Arial, Helvetica, sans-serif;
@@ -6,7 +8,7 @@
 }
 
 canvas{
-	
+
 }
 
 html, body {margin: 0; height: 100%; overflow: hidden}
@@ -113,92 +115,50 @@ main()
 }
 </script>
 
-
-
 <script type="text/javascript" src="Common/webgl-utils.js"></script>
 <script type="text/javascript" src="Common/InitShaders.js"></script>
 <script type="text/javascript" src="Common/MV.js"></script>
 <script type="text/javascript" src="main.js"></script>
+</head>
 
+<body oncontextmenu="return false;">
+  <div id="canvasdiv" class="canvas-container">
+    <canvas id="gl-canvas" width="600" height="600">
+    Oops ... your browser doesn't support the HTML5 canvas element
+    </canvas>
+  </div>
 
-
-<!--
-<div id="slider1">
-branch1 angle -180 <input id="slide" type="range"
+<div class = "menu-container">
+<div id="slider0" class = "subdiv">
+tree trunk angle -180 <input id="slide" type="range" 
  min="-180" max="180" step="10" value="0"
   />
  180
 </div><br/>
-
-<div id="slider2">
-b2u -180 <input id="slide" type="range"
- min="-180" max="180" step="10" value="0"
-  />
- 180
-</div><br/>
-<div id="slider3">
-b2l -180 <input id="slide" type="range"
- min="-180" max="180" step="10" value="0"
-  />
- 180
-</div><br/>
-<div id="slider4">
-b3u -180 <input id="slide" type="range"
- min="-180" max="180" step="10" value="0"
-  />
- 180
-</div><br/>
-<div id="slider5">
-b3l -180 <input id="slide" type="range"
- min="-180" max="180" step="10" value="0"
-  />
- 180
-</div><br/>
-<div id="slider6">
-b4u -180 <input id="slide" type="range"
- min="-180" max="180" step="10" value="0"
-  />
- 180
-</div><br/>
-<div id="slider7">
-b4l -180 <input id="slide" type="range"
- min="-180" max="180" step="10" value="0"
-  />
- 180
-</div><br/>
-<div id="slider8">
-b5u -180 <input id="slide" type="range"
- min="-180" max="180" step="10" value="0"
-  />
- 180
-</div><br/>
-
-<div id="slider9">
-b5l -180 <input id="slide" type="range"
- min="-180" max="180" step="10" value="0"
-  />
- 180
-</div><br/>
--->
-
-<body>
-<div class = "canvasdiv">
-<canvas id="gl-canvas" width="600" height="600"
-Oops ... your browser doesn't support the HTML5 canvas element
-</canvas>
-</div>
-
-<div class = "UIdiv">
-<div id="slider0">
-tree trunk angle -180 <input id="slide" type="range"
- min="-180" max="180" step="10" value="0"
-  />
- 180
-</div><br/>
-<div id="checkbox0">
+<div id="checkbox0" class = "subdiv">
  Lighting <input id="checkbox" type="checkbox" value = "0" checked = "true";
   />
-</div><br/>
+</div>
+<div class = "subdiv">
+  <div id="slider1" style="visibility: hidden;">
+    x angle -180 <input id="slide1" type="range"
+    min="-180" max="180" step="10" value="0"
+      />
+    180
+  </div>
+  <div id="slider2" style="visibility: hidden;">
+    y angle -180 <input id="slide2" type="range"
+    min="-180" max="180" step="10" value="0"
+      />
+    180
+  </div>
+  <div id="slider3" style="visibility: hidden;">
+    z angle -180 <input id="slide3" type="range"
+    min="-180" max="180" step="10" value="0"
+      />
+    180
+  </div>
+</div>
 </div>
 
 </body>
