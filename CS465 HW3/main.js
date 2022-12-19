@@ -81,7 +81,7 @@ var cameraX;
 var cameraY = -10;
 var cameraZ;
 var cameraZoom = 20;
-var cameraZoomMin = 10;
+var cameraZoomMin = 3;
 var cameraZoomMax = 50;
 
 var xRotation = 0;
@@ -89,7 +89,7 @@ var yRotation = 0;
 
 var qeqe = 0.0;
 
-var texSize = 1024;
+var texSize = 64;
 
 var texCoord = [
     vec2(0, 0),
@@ -146,8 +146,8 @@ function generateMollusk(){
             vCount = 0;
             uCount = 0;
             var uFlag = true;
-            for( let u = 0.0; u < 2*angleLimit; u+=uIncrement ){
-                for( let v = 0.0; v < 1.5*angleLimit; v+=vIncrement ){
+            for( let u = 0.0; u < 1*angleLimit; u+=uIncrement ){
+                for( let v = 0.0; v < 1*angleLimit; v+=vIncrement ){
                     var curX = (bigR + r*Math.cos(v))*(Math.pow(a,u)*Math.cos(j*u));
                     var curY = (bigR + r*Math.cos(v))*((-Math.pow(a,u))*Math.sin(j*u));
                     var curZ = (-c)*(b + r*Math.sin(v))*(Math.pow(a,u)*k*Math.sin(v));
@@ -166,17 +166,30 @@ function generateMollusk(){
 			
             //*
             for(let i = 0; i < uCount-1; i++){
-                for(let j = 0; j < vCount-1; j++){
+                for(let j = 0; j < vCount; j++){
                     var p1 = i*vCount+j;
                     var p2 = p1+1;
                     var p3 = (i+1)*vCount+j;
                     var p4 = p3+1;
+                    
+                    if( j == vCount-1){
+                        p2 = i*vCount;
+                        p4 = (i+1)*vCount;
+                    }
+                    /*else if(i == uCount-1){
+                        p3 = j;
+                        p4 = p3+1;
+                    } else if(j == vCount-1){
+                        p3 = j;
+                        p4 = p3+1;
+                    }*/
                     var t1 = subtract(vertices[p3], vertices[p1]);
                     var t2 = subtract(vertices[p2], vertices[p3]);
                     var normal = cross(t1, t2);
                     var normal = vec3(normal);
 
-                    var thisColor = (j+i) % 2 == 0 ? vertexColors[0] : vertexColors[2];
+                    var thisColor = (j+i) % 2 == 0 ? vertexColors[2] : vertexColors[2];
+
 
                     pointsArray.push(vertices[p1]); 
                     normalsArray.push(normal); 
@@ -210,6 +223,7 @@ function generateMollusk(){
 
                 }
             }
+            
             //*/
             /*
             for(let i = 0; i < (vertices.length-4); i+=4){
