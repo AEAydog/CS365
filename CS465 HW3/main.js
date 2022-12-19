@@ -1,5 +1,3 @@
-
-
 var canvas;
 var gl;
 
@@ -10,16 +8,7 @@ var R, r, a, b, i, j, k, c, count1, count2;
 var pointsArray = [];
 var normalsArray = [];
 
-var vertices = [
-        vec4( -0.5, -0.5,  0.5, 1.0 ),
-        vec4( -0.5,  0.5,  0.5, 1.0 ),
-        vec4( 0.5,  0.5,  0.5, 1.0 ),
-        vec4( 0.5, -0.5,  0.5, 1.0 ),
-        vec4( -0.5, -0.5, -0.5, 1.0 ),
-        vec4( -0.5,  0.5, -0.5, 1.0 ),
-        vec4( 0.5,  0.5, -0.5, 1.0 ),
-        vec4( 0.5, -0.5, -0.5, 1.0 )
-    ];
+var vertices = [];
 
 var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
@@ -47,25 +36,54 @@ var thetaLoc;
 
 var flag = true;
 
+var molluskType = 'turritella';
+var a = 1.1;
+var b = 3;
+var c = 1;
+var j = 2;
+var k = 1;
+var l = 1;
+var m = 1;
+var bigR = 2;
+var r = 1;
+var vIncrement = 1;
+var uIncrement = 1;
+
+var cameraX;
+var cameraY;
+var cameraZ;
+var cameraZoom;
+
 function quad(a, b, c, d) {
 
-     var t1 = subtract(vertices[b], vertices[a]);
-     var t2 = subtract(vertices[c], vertices[b]);
+    var vertices2 = [
+        vec4( -0.5, -0.5,  0.5, 1.0 ),
+        vec4( -0.5,  0.5,  0.5, 1.0 ),
+        vec4( 0.5,  0.5,  0.5, 1.0 ),
+        vec4( 0.5, -0.5,  0.5, 1.0 ),
+        vec4( -0.5, -0.5, -0.5, 1.0 ),
+        vec4( -0.5,  0.5, -0.5, 1.0 ),
+        vec4( 0.5,  0.5, -0.5, 1.0 ),
+        vec4( 0.5, -0.5, -0.5, 1.0 )
+    ];
+
+     var t1 = subtract(vertices2[b], vertices2[a]);
+     var t2 = subtract(vertices2[c], vertices2[b]);
      var normal = cross(t1, t2);
      var normal = vec3(normal);
 
 
-     pointsArray.push(vertices[a]); 
+     pointsArray.push(vertices2[a]); 
      normalsArray.push(normal); 
-     pointsArray.push(vertices[b]); 
+     pointsArray.push(vertices2[b]); 
      normalsArray.push(normal); 
-     pointsArray.push(vertices[c]); 
+     pointsArray.push(vertices2[c]); 
      normalsArray.push(normal);   
-     pointsArray.push(vertices[a]);  
+     pointsArray.push(vertices2[a]);  
      normalsArray.push(normal); 
-     pointsArray.push(vertices[c]); 
+     pointsArray.push(vertices2[c]); 
      normalsArray.push(normal); 
-     pointsArray.push(vertices[d]); 
+     pointsArray.push(vertices2[d]); 
      normalsArray.push(normal);    
 }
 
@@ -78,6 +96,70 @@ function colorCube()
     quad( 6, 5, 1, 2 );
     quad( 4, 5, 6, 7 );
     quad( 5, 4, 0, 1 );
+}
+
+function generateMollusk(){
+
+    switch(molluskType){
+        case 'turritella':
+            var a = 1.1;
+            var b = 3;
+            var c = 1;
+            var j = 2;
+            var k = 1;
+            var bigR = 2;
+            var r = 1;
+            var v, u;
+            for( v = 0.0; v < 360; v+=vIncrement ){
+                for( u = 0.0; u < 360; u+=uIncrement ){
+                    var curX = (bigR + r*Math.cos(v))*(Math.pow(a,u)*Math.cos(j*u));
+                    var curY = (bigR + r*Math.cos(v))*((-Math.pow(a,u))*Math.sin(j*u));
+                    var curZ = (-c)*(b + r*Math.sin(v))*(Math.pow(a,u)*k*Math.sin(v));
+                    vertices.push(vec4(curX, curY, curZ, 1));
+                    //console.log("___________\nc:\n" + c)
+                }
+            }
+            
+            console.log(vertices);
+
+            for(let i = 0; i < (vertices.length/4)-3; i++){
+                var t1 = subtract(vertices[i+1], vertices[i]);
+                var t2 = subtract(vertices[i+2], vertices[i+1]);
+                var normal = cross(t1, t2);
+                var normal = vec3(normal);
+                pointsArray.push(vertices[i]); 
+                normalsArray.push(normal); 
+                pointsArray.push(vertices[i+1]); 
+                normalsArray.push(normal); 
+                pointsArray.push(vertices[i+2]); 
+                normalsArray.push(normal); 
+            }
+            
+            /*
+            var t1 = subtract(vertices[b], vertices[a]);
+            var t2 = subtract(vertices[c], vertices[b]);
+            var normal = cross(t1, t2);
+            var normal = vec3(normal);
+    
+    
+            pointsArray.push(vertices[a]); 
+            normalsArray.push(normal); 
+            pointsArray.push(vertices[b]); 
+            normalsArray.push(normal); 
+            pointsArray.push(vertices[c]); 
+            normalsArray.push(normal);   
+            pointsArray.push(vertices[a]);  
+            normalsArray.push(normal); 
+            pointsArray.push(vertices[c]); 
+            normalsArray.push(normal); 
+            pointsArray.push(vertices[d]); 
+            normalsArray.push(normal);
+            */
+        break;
+        default:
+        break;
+    }
+
 }
 
 
@@ -98,7 +180,8 @@ window.onload = function init() {
     program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
     
-    colorCube();
+    //colorCube();
+    generateMollusk();
 
     var nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
@@ -176,7 +259,7 @@ var render = function(){
     gl.uniformMatrix4fv( gl.getUniformLocation(program,
             "modelViewMatrix"), false, flatten(modelView) );
 
-    gl.drawArrays( gl.TRIANGLES, 0, numVertices );
+    gl.drawArrays( gl.LINES, 0, numVertices );
             
             
     requestAnimFrame(render);
