@@ -9,9 +9,13 @@
 
 <script id="vertex-shader" type="x-shader/x-vertex">
 attribute  vec4 vPosition;
+attribute  vec4 vColor;
+attribute  vec2 vTexCoord;
 attribute  vec3 vNormal;
 varying vec4 fColor;
+varying vec2 fTexCoord;
 
+uniform vec3 theta;
 uniform vec4 ambientProduct, diffuseProduct, specularProduct;
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
@@ -19,8 +23,6 @@ uniform vec4 lightPosition;
 uniform float shininess;
 void main()
 {
-
-    
     vec3 pos = -(modelViewMatrix * vPosition).xyz;
     
     //fixed light postion
@@ -54,7 +56,8 @@ void main()
     gl_Position = projectionMatrix * modelViewMatrix * vPosition;
     fColor = ambient + diffuse +specular;
     
-    fColor.a = 1.0;
+    fColor = vColor;
+    fTexCoord = vTexCoord;
 }
 </script>
 
@@ -62,13 +65,15 @@ void main()
 
 precision mediump float;
 
-
 varying vec4 fColor;
+varying vec2 fTexCoord;
+
+uniform sampler2D texture;
 
 void
 main()
 {
-    gl_FragColor = fColor;
+    gl_FragColor = fColor*texture2D( texture, fTexCoord );
 }
 </script>
 

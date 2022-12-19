@@ -7,11 +7,26 @@ var nBuffer;
 var vNormal;
 var vBuffer;
 var vPosition;
+var vColor;
+var cBuffer;
 
 var pointsArray = [];
 var normalsArray = [];
+var texCoordsArray = [];
+var colorsArray = [];
 
 var vertices = [];
+
+var vertexColors = [
+    vec4( 0.0, 0.0, 0.0, 1.0 ),  // black
+    vec4( 1.0, 0.0, 0.0, 1.0 ),  // red
+    vec4( 1.0, 1.0, 0.0, 1.0 ),  // yellow
+    vec4( 0.0, 1.0, 0.0, 1.0 ),  // green
+    vec4( 0.0, 0.0, 1.0, 1.0 ),  // blue
+    vec4( 1.0, 0.0, 1.0, 1.0 ),  // magenta
+    vec4( 0.0, 1.0, 1.0, 1.0 ),  // white
+    vec4( 0.0, 1.0, 1.0, 1.0 )   // cyan
+];    
 
 var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
@@ -72,55 +87,53 @@ var yRotation = 0;
 
 var qeqe = 0.0;
 
-function quad(a, b, c, d) {
+var texSize = 1024;
 
-    var vertices2 = [
-        vec4( -0.5, -0.5,  0.5, 1.0 ),
-        vec4( -0.5,  0.5,  0.5, 1.0 ),
-        vec4( 0.5,  0.5,  0.5, 1.0 ),
-        vec4( 0.5, -0.5,  0.5, 1.0 ),
-        vec4( -0.5, -0.5, -0.5, 1.0 ),
-        vec4( -0.5,  0.5, -0.5, 1.0 ),
-        vec4( 0.5,  0.5, -0.5, 1.0 ),
-        vec4( 0.5, -0.5, -0.5, 1.0 )
-    ];
+var texCoord = [
+    vec2(0, 0),
+    vec2(0, 1),
+    vec2(1, 1),
+    vec2(1, 0)
+];
 
-     var t1 = subtract(vertices2[b], vertices2[a]);
-     var t2 = subtract(vertices2[c], vertices2[b]);
-     var normal = cross(t1, t2);
-     var normal = vec3(normal);
-
-
-     pointsArray.push(vertices2[a]); 
-     normalsArray.push(normal); 
-     pointsArray.push(vertices2[b]); 
-     normalsArray.push(normal); 
-     pointsArray.push(vertices2[c]); 
-     normalsArray.push(normal);   
-     pointsArray.push(vertices2[a]);  
-     normalsArray.push(normal); 
-     pointsArray.push(vertices2[c]); 
-     normalsArray.push(normal); 
-     pointsArray.push(vertices2[d]); 
-     normalsArray.push(normal);    
+var image1 = new Array()
+for (var i =0; i<texSize; i++)  image1[i] = new Array();
+for (var i =0; i<texSize; i++) 
+    for ( var f = 0; f < texSize; f++) 
+       image1[i][f] = new Float32Array(4);
+for (var i =0; i<texSize; i++) for (var f=0; f<texSize; f++) {
+    var co = (((i & 0x8) == 0) ^ ((f & 0x8)  == 0));
+    image1[i][f] = [co, co, co, 1];
 }
 
+var image2 = new Uint8Array(4*texSize*texSize);
 
-function colorCube()
-{
-    quad( 1, 0, 3, 2 );
-    quad( 2, 3, 7, 6 );
-    quad( 3, 0, 4, 7 );
-    quad( 6, 5, 1, 2 );
-    quad( 4, 5, 6, 7 );
-    quad( 5, 4, 0, 1 );
+    for ( var ii = 0; ii < texSize; ii++ ) 
+        for ( var jj = 0; jj < texSize; jj++ ) 
+           for(var kk =0; kk<4; kk++) 
+                image2[4*texSize*ii+4*jj+kk] = 255*image1[ii][jj][kk];
+
+function configureTexture(image) {
+    texture = gl.createTexture();
+    gl.activeTexture( gl.TEXTURE0 );
+    gl.bindTexture( gl.TEXTURE_2D, texture );
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0, 
+        gl.RGBA, gl.UNSIGNED_BYTE, image);
+    gl.generateMipmap( gl.TEXTURE_2D );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, 
+        gl.NEAREST_MIPMAP_LINEAR );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
 }
+
 
 function generateMollusk(){
 	
 	vertices = [];
 	pointsArray = [];
 	normalsArray = [];
+    colorsArray = [];
+    texCoordsArray = [];
 	
 	vIncrement = 1.0 / count1;
 	uIncrement = 0.5 / count2;
@@ -160,18 +173,39 @@ function generateMollusk(){
                     var t2 = subtract(vertices[p2], vertices[p3]);
                     var normal = cross(t1, t2);
                     var normal = vec3(normal);
+
+                    var thisColor = (j+i) % 2 == 0 ? vertexColors[0] : vertexColors[2];
+
                     pointsArray.push(vertices[p1]); 
                     normalsArray.push(normal); 
+                    colorsArray.push(thisColor);
+                    texCoordsArray.push(texCoord[0]);
+
                     pointsArray.push(vertices[p3]); 
-                    normalsArray.push(normal); 
+                    normalsArray.push(normal);
+                    colorsArray.push(thisColor);
+                    texCoordsArray.push(texCoord[1]);
+
                     pointsArray.push(vertices[p2]); 
                     normalsArray.push(normal); 
+                    colorsArray.push(thisColor);
+                    texCoordsArray.push(texCoord[2]);
+
                     pointsArray.push(vertices[p3]); 
                     normalsArray.push(normal); 
+                    colorsArray.push(thisColor);
+                    texCoordsArray.push(texCoord[0]);
+
                     pointsArray.push(vertices[p2]); 
                     normalsArray.push(normal); 
+                    colorsArray.push(thisColor);
+                    texCoordsArray.push(texCoord[1]);
+
                     pointsArray.push(vertices[p4]); 
                     normalsArray.push(normal); 
+                    colorsArray.push(thisColor);
+                    texCoordsArray.push(texCoord[2]);
+
                 }
             }
             //*/
@@ -229,9 +263,14 @@ window.onload = function init() {
     program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
     
-    //colorCube();
     generateMollusk();
 	
+    cBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(colorsArray), gl.STATIC_DRAW );
+    vColor = gl.getAttribLocation( program, "vColor" );
+    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vColor);
 	
     nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
@@ -258,6 +297,15 @@ window.onload = function init() {
     thetaLoc = gl.getUniformLocation(program, "theta"); 
     
     viewerPos = vec3(0.0, 0.0, -20.0 );
+
+    var tBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer);
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoordsArray), gl.STATIC_DRAW );
+    var vTexCoord = gl.getAttribLocation( program, "vTexCoord");
+    gl.vertexAttribPointer(vTexCoord, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vTexCoord);
+
+    configureTexture(image2);
     
     ambientProduct = mult(lightAmbient, materialAmbient);
     diffuseProduct = mult(lightDiffuse, materialDiffuse);
@@ -315,8 +363,6 @@ window.onload = function init() {
             rotationMatrix = mult(rotationMatrix, rotate(yRotation, [1, 0, 0] ));
         }
     });
-    
-
 
 
 	
