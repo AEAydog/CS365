@@ -3,7 +3,7 @@ var gl;
 
 var numVertices  = 36;
 
-var R, r, a, b, i, j, k, c, count1, count2;
+var count1, count2;
 
 var pointsArray = [];
 var normalsArray = [];
@@ -216,7 +216,7 @@ window.onload = function init() {
 	
 	
 	
-	document.getElementById("R-slider").onchange = function(){R = event.srcElement.value;};
+	document.getElementById("R-slider").onchange = function(){bigR = event.srcElement.value;};
 	document.getElementById("r-slider").onchange = function(){r = event.srcElement.value;};
 	document.getElementById("a-slider").onchange = function(){a = event.srcElement.value;};
 	document.getElementById("b-slider").onchange = function(){b = event.srcElement.value;};
