@@ -89,7 +89,7 @@ var yRotation = 0;
 
 var qeqe = 0.0;
 
-var texSize = 64;
+var texSize = 32;
 
 var texCoord = [
     vec2(0, 0),
@@ -146,8 +146,8 @@ function generateMollusk(){
             vCount = 0;
             uCount = 0;
             var uFlag = true;
-            for( let u = 0.0; u < 1*angleLimit; u+=uIncrement ){
-                for( let v = 0.0; v < 1*angleLimit; v+=vIncrement ){
+            for( let u = 0.0; u < 0.9*angleLimit; u+=uIncrement ){
+                for( let v = 0.0; v < 0.9*angleLimit; v+=vIncrement ){
                     var curX = (bigR + r*Math.cos(v))*(Math.pow(a,u)*Math.cos(j*u));
                     var curY = (bigR + r*Math.cos(v))*((-Math.pow(a,u))*Math.sin(j*u));
                     var curZ = (-c)*(b + r*Math.sin(v))*(Math.pow(a,u)*k*Math.sin(v));
@@ -173,8 +173,12 @@ function generateMollusk(){
                     var p4 = p3+1;
                     
                     if( j == vCount-1){
-                        p2 = i*vCount;
-                        p4 = (i+1)*vCount;
+                        p2 = (i+1)*vCount;
+                        p4 = (i+2)*vCount;
+                        if( i == uCount-2 ){
+                            p2 -= vCount;
+                            p4 -= vCount;
+                        }
                     }
                     /*else if(i == uCount-1){
                         p3 = j;
