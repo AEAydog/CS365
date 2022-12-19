@@ -42,8 +42,8 @@ var flag = false;
 var dragFlag = false;
 
 var molluskType = 'turritella';
-var count1 = 1;
-var count2 = 1;
+var count1 = 9;
+var count2 = 9;
 var a = 1.1;
 var b = 3;
 var c = 1;
@@ -60,7 +60,7 @@ var angleLimit = 2 * Math.PI;
 
 
 var cameraX;
-var cameraY;
+var cameraY = -10;
 var cameraZ;
 var cameraZoom = 20;
 var cameraZoomMin = 10;
