@@ -42,7 +42,8 @@ var flag = false;
 var dragFlag = false;
 
 var molluskType = 'turritella';
-var count1, count2;
+var count1 = 1;
+var count2 = 1;
 var a = 1.1;
 var b = 3;
 var c = 1;
@@ -116,6 +117,11 @@ function colorCube()
 function generateMollusk(){
 	
 	vertices = [];
+	pointsArray = [];
+	normalsArray = [];
+	
+	vIncrement = 0.5 / count1;
+	uIncrement = 0.5 / count2;
 	
     switch(molluskType){
         case 'turritella':
@@ -174,26 +180,11 @@ function generateMollusk(){
 function refreshMollusk(){
 	generateMollusk();
 	
-	//nBuffer = null;
-	//vNormal = null;
-	//vBuffer = null;
-	//vPosition = null;
-	
-    //nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.DYNAMIC_DRAW );
-    
-    //vNormal = gl.getAttribLocation( program, "vNormal" );
-    //gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
-    //gl.enableVertexAttribArray( vNormal );
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(normalsArray));
 
-    //vBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(pointsArray), gl.DYNAMIC_DRAW );
-    
-    //vPosition = gl.getAttribLocation(program, "vPosition");
-    //gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-    //gl.enableVertexAttribArray(vPosition);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(pointsArray));
 }
 
 window.onload = function init() {
@@ -220,15 +211,21 @@ window.onload = function init() {
     nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
     gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
-    
+    gl.bufferData( gl.ARRAY_BUFFER, 100000 * 8, gl.STATIC_DRAW );
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(normalsArray));
+	
+	
     vNormal = gl.getAttribLocation( program, "vNormal" );
     gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vNormal );
 
     vBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW );
-    
+    //gl.bufferData( gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW );
+    gl.bufferData( gl.ARRAY_BUFFER, 100000 * 8, gl.STATIC_DRAW );
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(pointsArray));
+	
+	
     vPosition = gl.getAttribLocation(program, "vPosition");
     gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
@@ -300,6 +297,7 @@ window.onload = function init() {
     
     render();
 }
+
 
 var render = function(){
             
