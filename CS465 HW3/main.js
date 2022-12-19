@@ -42,8 +42,8 @@ var flag = false;
 var dragFlag = false;
 
 var molluskType = 'turritella';
-var count1 = 9;
-var count2 = 9;
+var count1 = 2;
+var count2 = 2;
 var a = 1.1;
 var b = 3;
 var c = 1;
@@ -53,8 +53,8 @@ var l = 1;
 var m = 1;
 var bigR = 2;
 var r = 1;
-var vIncrement = 0.1;
-var uIncrement = 0.1;
+var vIncrement; //= 0.1;
+var uIncrement; //= 0.1;
 var angleLimit = 2 * Math.PI;
 
 var vCount;
@@ -70,6 +70,7 @@ var cameraZoomMax = 50;
 var xRotation = 0;
 var yRotation = 0;
 
+var qeqe = 0.0;
 
 function quad(a, b, c, d) {
 
@@ -121,7 +122,7 @@ function generateMollusk(){
 	pointsArray = [];
 	normalsArray = [];
 	
-	vIncrement = 0.5 / count1;
+	vIncrement = 1.0 / count1;
 	uIncrement = 0.5 / count2;
 	
     switch(molluskType){
@@ -130,8 +131,8 @@ function generateMollusk(){
             vCount = 0;
             uCount = 0;
             var uFlag = true;
-            for( u = 0.0; u < 2*angleLimit; u+=uIncrement ){
-                for( v = 0.0; v < 1.5*angleLimit; v+=vIncrement ){
+            for( let u = 0.0; u < 2*angleLimit; u+=uIncrement ){
+                for( let v = 0.0; v < 1.5*angleLimit; v+=vIncrement ){
                     var curX = (bigR + r*Math.cos(v))*(Math.pow(a,u)*Math.cos(j*u));
                     var curY = (bigR + r*Math.cos(v))*((-Math.pow(a,u))*Math.sin(j*u));
                     var curZ = (-c)*(b + r*Math.sin(v))*(Math.pow(a,u)*k*Math.sin(v));
@@ -144,9 +145,11 @@ function generateMollusk(){
                 uCount++;
             }
 			
-            numVertices = vertices.length;
+            numVertices = vertices.length * 6;
             
-            
+			
+			
+            //*
             for(let i = 0; i < uCount-1; i++){
                 for(let j = 0; j < vCount-1; j++){
                     var p1 = i*vCount+j;
@@ -171,7 +174,7 @@ function generateMollusk(){
                     normalsArray.push(normal); 
                 }
             }
-            
+            //*/
             /*
             for(let i = 0; i < (vertices.length-4); i+=4){
                 var t1 = subtract(vertices[i+1], vertices[i]);
@@ -191,7 +194,7 @@ function generateMollusk(){
                 pointsArray.push(vertices[i+3]); 
                 normalsArray.push(normal); 
             }
-            */
+           */
         break;
         default:
         break;
@@ -285,7 +288,7 @@ window.onload = function init() {
 	document.getElementById("c-slider").onchange = function(){c = parseFloat(event.srcElement.value); refreshMollusk(); };
 	document.getElementById("j-slider").onchange = function(){j = parseFloat(event.srcElement.value); refreshMollusk(); };
 	document.getElementById("k-slider").onchange = function(){k = parseFloat(event.srcElement.value); refreshMollusk(); };
-	document.getElementById("l-slider").onchange = function(){l = parseFloat(event.srcElement.value); refreshMollusk(); };
+	document.getElementById("l-slider").onchange = function(){l = parseFloat(event.srcElement.value); refreshMollusk(); qeqe += 0.1; };
 	document.getElementById("m-slider").onchange = function(){m = parseFloat(event.srcElement.value); refreshMollusk(); };
 	document.getElementById("v-slider").onchange = function(){count1 = parseFloat(event.srcElement.value); refreshMollusk(); };
 	document.getElementById("u-slider").onchange = function(){count2 = parseFloat(event.srcElement.value); refreshMollusk(); };
@@ -356,7 +359,7 @@ var render = function(){
        false, flatten(projectionMatrix));
     
     gl.drawArrays( gl.TRIANGLES, 0, numVertices );
-            
+    //gl.drawArrays( gl.LINE_STRIP, 0, numVertices );
             
     requestAnimFrame(render);
 }
