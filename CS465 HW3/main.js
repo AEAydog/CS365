@@ -3,7 +3,10 @@ var gl;
 
 var numVertices  = 200000;
 
-var count1, count2;
+var nBuffer;
+var vNormal;
+var vBuffer;
+var vPosition;
 
 var pointsArray = [];
 var normalsArray = [];
@@ -39,6 +42,7 @@ var flag = false;
 var dragFlag = false;
 
 var molluskType = 'turritella';
+var count1, count2;
 var a = 1.1;
 var b = 3;
 var c = 1;
@@ -51,6 +55,8 @@ var r = 1;
 var vIncrement = 0.1;
 var uIncrement = 0.1;
 var angleLimit = 6.28;
+
+
 
 var cameraX;
 var cameraY;
@@ -108,16 +114,11 @@ function colorCube()
 }
 
 function generateMollusk(){
-
+	
+	vertices = [];
+	
     switch(molluskType){
         case 'turritella':
-            var a = 1.1;
-            var b = 3;
-            var c = 1;
-            var j = 2;
-            var k = 1;
-            var bigR = 2;
-            var r = 1;
             var v, u;
             for( v = 0.0; v < 2*angleLimit; v+=vIncrement ){
                 for( u = 0.0; u < 2*angleLimit; u+=uIncrement ){
@@ -127,7 +128,7 @@ function generateMollusk(){
                     vertices.push(vec4(curX, curY, curZ, 1));
                 }
             }
-            
+			
             numVertices = vertices.length;
 
             for(let i = 0; i < (vertices.length/4)-3; i++){
@@ -170,6 +171,30 @@ function generateMollusk(){
 
 }
 
+function refreshMollusk(){
+	generateMollusk();
+	
+	//nBuffer = null;
+	//vNormal = null;
+	//vBuffer = null;
+	//vPosition = null;
+	
+    //nBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.DYNAMIC_DRAW );
+    
+    //vNormal = gl.getAttribLocation( program, "vNormal" );
+    //gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
+    //gl.enableVertexAttribArray( vNormal );
+
+    //vBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(pointsArray), gl.DYNAMIC_DRAW );
+    
+    //vPosition = gl.getAttribLocation(program, "vPosition");
+    //gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+    //gl.enableVertexAttribArray(vPosition);
+}
 
 window.onload = function init() {
     canvas = document.getElementById( "gl-canvas" );
@@ -190,20 +215,21 @@ window.onload = function init() {
     
     //colorCube();
     generateMollusk();
-
-    var nBuffer = gl.createBuffer();
+	
+	
+    nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
     gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
     
-    var vNormal = gl.getAttribLocation( program, "vNormal" );
+    vNormal = gl.getAttribLocation( program, "vNormal" );
     gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vNormal );
 
-    var vBuffer = gl.createBuffer();
+    vBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
     gl.bufferData( gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW );
     
-    var vPosition = gl.getAttribLocation(program, "vPosition");
+    vPosition = gl.getAttribLocation(program, "vPosition");
     gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 
@@ -220,18 +246,18 @@ window.onload = function init() {
     document.getElementById("ButtonZ").onclick = function(){axis = zAxis;};
     document.getElementById("ButtonT").onclick = function(){flag = !flag;};
 	
+	document.getElementById("R-slider").onchange = function(){bigR = parseFloat(event.srcElement.value); refreshMollusk(); };
+	document.getElementById("r-slider").onchange = function(){r = parseFloat(event.srcElement.value); refreshMollusk(); };
+	document.getElementById("a-slider").onchange = function(){a = parseFloat(event.srcElement.value); refreshMollusk(); };
+	document.getElementById("b-slider").onchange = function(){b = parseFloat(event.srcElement.value); refreshMollusk(); };
+	document.getElementById("i-slider").onchange = function(){i = parseFloat(event.srcElement.value); refreshMollusk(); };
+	document.getElementById("j-slider").onchange = function(){j = parseFloat(event.srcElement.value); refreshMollusk(); };
+	document.getElementById("k-slider").onchange = function(){k = parseFloat(event.srcElement.value); refreshMollusk(); };
+	document.getElementById("c-slider").onchange = function(){c = parseFloat(event.srcElement.value); refreshMollusk(); };
+	document.getElementById("count1-slider").onchange = function(){count1 = parseFloat(event.srcElement.value); refreshMollusk(); };
+	document.getElementById("count2-slider").onchange = function(){count2 = parseFloat(event.srcElement.value); refreshMollusk(); };
 	
-	
-	document.getElementById("R-slider").onchange = function(){bigR = event.srcElement.value;};
-	document.getElementById("r-slider").onchange = function(){r = event.srcElement.value;};
-	document.getElementById("a-slider").onchange = function(){a = event.srcElement.value;};
-	document.getElementById("b-slider").onchange = function(){b = event.srcElement.value;};
-	document.getElementById("i-slider").onchange = function(){i = event.srcElement.value;};
-	document.getElementById("j-slider").onchange = function(){j = event.srcElement.value;};
-	document.getElementById("k-slider").onchange = function(){k = event.srcElement.value;};
-	document.getElementById("c-slider").onchange = function(){c = event.srcElement.value;};
-	document.getElementById("count1-slider").onchange = function(){count1 = event.srcElement.value;};
-	document.getElementById("count2-slider").onchange = function(){count2 = event.srcElement.value;};
+
 	canvas.addEventListener("wheel", function(event){
         cameraZoom += event.deltaY * 0.01;
         if(cameraZoom < cameraZoomMin)
@@ -252,6 +278,9 @@ window.onload = function init() {
         }
     });
     
+
+
+
 	
     gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"),
        flatten(ambientProduct));
@@ -268,7 +297,6 @@ window.onload = function init() {
 
     projectionMatrix = ortho(-cameraZoom,cameraZoom, -cameraZoom * 0.3, cameraZoom * 1.7,-cameraZoom,cameraZoom);
 
-    
     
     render();
 }
