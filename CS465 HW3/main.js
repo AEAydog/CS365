@@ -55,7 +55,7 @@ var bigR = 2;
 var r = 1;
 var vIncrement = 0.1;
 var uIncrement = 0.1;
-var angleLimit = 6.28;
+var angleLimit = 2 * Math.PI;
 
 
 
@@ -126,7 +126,7 @@ function generateMollusk(){
     switch(molluskType){
         case 'turritella':
             var v, u;
-            for( v = 0.0; v < 2*angleLimit; v+=vIncrement ){
+            for( v = 0.0; v < 1.5*angleLimit; v+=vIncrement ){
                 for( u = 0.0; u < 2*angleLimit; u+=uIncrement ){
                     var curX = (bigR + r*Math.cos(v))*(Math.pow(a,u)*Math.cos(j*u));
                     var curY = (bigR + r*Math.cos(v))*((-Math.pow(a,u))*Math.sin(j*u));
@@ -277,13 +277,15 @@ window.onload = function init() {
 
 	canvas.addEventListener("wheel", function(event){
         cameraZoom += event.deltaY * 0.01;
+		//cameraZoom = min(max( cameraZoom , cameraZoomMin ), cameraZoomMax );
         if(cameraZoom < cameraZoomMin)
             cameraZoom = cameraZoomMin;
         else if( cameraZoom > cameraZoomMax)
             cameraZoom = cameraZoomMax;
-        projectionMatrix = ortho(-cameraZoom,cameraZoom, -cameraZoom * 0.3, cameraZoom * 1.7,-cameraZoom,cameraZoom);
+        projectionMatrix = ortho(-cameraZoom,cameraZoom, -cameraZoom * 1.0, cameraZoom * 1.0,-cameraZoom,cameraZoom);
 	});
     canvas.addEventListener("mouseup", function(event){dragFlag = false;});
+	canvas.addEventListener("mouseleave", function(event){dragFlag = false;});
     canvas.addEventListener("mousedown", function(event){dragFlag = true;});
     canvas.addEventListener("mousemove", function(event){
         if(dragFlag){
@@ -312,7 +314,7 @@ window.onload = function init() {
        "shininess"),materialShininess);
     
 
-    projectionMatrix = ortho(-cameraZoom,cameraZoom, -cameraZoom * 0.3, cameraZoom * 1.7,-cameraZoom,cameraZoom);
+    projectionMatrix = ortho(-cameraZoom,cameraZoom, -cameraZoom * 1.0, cameraZoom * 1.0,-cameraZoom,cameraZoom);
 
     
     render();
@@ -337,7 +339,7 @@ var render = function(){
     gl.uniformMatrix4fv( gl.getUniformLocation(program, "projectionMatrix"),
        false, flatten(projectionMatrix));
     
-    gl.drawArrays( gl.LINES, 0, numVertices );
+    gl.drawArrays( gl.LINE_STRIP, 0, numVertices );
             
             
     requestAnimFrame(render);
