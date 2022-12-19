@@ -9,6 +9,7 @@ var vBuffer;
 var vPosition;
 var vColor;
 var cBuffer;
+var tBuffer;
 
 var pointsArray = [];
 var normalsArray = [];
@@ -245,6 +246,12 @@ function refreshMollusk(){
 
     gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(pointsArray));
+
+    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(colorsArray));
+    
+    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(texCoordsArray));
 }
 
 window.onload = function init() {
@@ -268,7 +275,10 @@ window.onload = function init() {
 	
     cBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(colorsArray), gl.STATIC_DRAW );
+    //gl.bufferData( gl.ARRAY_BUFFER, flatten(colorsArray), gl.STATIC_DRAW );
+    gl.bufferData( gl.ARRAY_BUFFER, 200000 * 8, gl.STATIC_DRAW );
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(colorsArray));
+
     vColor = gl.getAttribLocation( program, "vColor" );
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
@@ -299,9 +309,11 @@ window.onload = function init() {
     
     viewerPos = vec3(0.0, 0.0, -20.0 );
 
-    var tBuffer = gl.createBuffer();
+    tBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer);
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoordsArray), gl.STATIC_DRAW );
+    //gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoordsArray), gl.STATIC_DRAW );
+    gl.bufferData( gl.ARRAY_BUFFER, 200000 * 8, gl.STATIC_DRAW );
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(texCoordsArray));
     var vTexCoord = gl.getAttribLocation( program, "vTexCoord");
     gl.vertexAttribPointer(vTexCoord, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vTexCoord);
