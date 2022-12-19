@@ -163,8 +163,6 @@ function generateMollusk(){
             numVertices = vertices.length * 6;
             
 			
-			
-            //*
             for(let i = 0; i < uCount-1; i++){
                 for(let j = 0; j < vCount; j++){
                     var p1 = i*vCount+j;
@@ -180,13 +178,7 @@ function generateMollusk(){
                             p4 -= vCount;
                         }
                     }
-                    /*else if(i == uCount-1){
-                        p3 = j;
-                        p4 = p3+1;
-                    } else if(j == vCount-1){
-                        p3 = j;
-                        p4 = p3+1;
-                    }*/
+
                     var t1 = subtract(vertices[p3], vertices[p1]);
                     var t2 = subtract(vertices[p2], vertices[p3]);
                     var normal = cross(t1, t2);
@@ -227,28 +219,6 @@ function generateMollusk(){
 
                 }
             }
-            
-            //*/
-            /*
-            for(let i = 0; i < (vertices.length-4); i+=4){
-                var t1 = subtract(vertices[i+1], vertices[i]);
-                var t2 = subtract(vertices[i+2], vertices[i+1]);
-                var normal = cross(t1, t2);
-                var normal = vec3(normal);
-                pointsArray.push(vertices[i]); 
-                normalsArray.push(normal); 
-                pointsArray.push(vertices[i+1]); 
-                normalsArray.push(normal); 
-                pointsArray.push(vertices[i+2]); 
-                normalsArray.push(normal); 
-                pointsArray.push(vertices[i]); 
-                normalsArray.push(normal); 
-                pointsArray.push(vertices[i+2]); 
-                normalsArray.push(normal); 
-                pointsArray.push(vertices[i+3]); 
-                normalsArray.push(normal); 
-            }
-           */
         break;
         default:
         break;
