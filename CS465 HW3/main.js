@@ -1,7 +1,7 @@
 var canvas;
 var gl;
 
-var numVertices  = 36;
+var numVertices  = 200000;
 
 var count1, count2;
 
@@ -22,7 +22,7 @@ var materialShininess = 100.0;
 
 var ctm;
 var ambientColor, diffuseColor, specularColor;
-var modelView, projection;
+var modelView, projectionMatrix;
 var viewerPos;
 var program;
 
@@ -46,13 +46,14 @@ var l = 1;
 var m = 1;
 var bigR = 2;
 var r = 1;
-var vIncrement = 1;
-var uIncrement = 1;
+var vIncrement = 0.1;
+var uIncrement = 0.1;
+var angleLimit = 6.28;
 
 var cameraX;
 var cameraY;
 var cameraZ;
-var cameraZoom;
+var cameraZoom = 20;
 
 function quad(a, b, c, d) {
 
@@ -110,8 +111,8 @@ function generateMollusk(){
             var bigR = 2;
             var r = 1;
             var v, u;
-            for( v = 0.0; v < 360; v+=vIncrement ){
-                for( u = 0.0; u < 360; u+=uIncrement ){
+            for( v = 0.0; v < 2*angleLimit; v+=vIncrement ){
+                for( u = 0.0; u < 2*angleLimit; u+=uIncrement ){
                     var curX = (bigR + r*Math.cos(v))*(Math.pow(a,u)*Math.cos(j*u));
                     var curY = (bigR + r*Math.cos(v))*((-Math.pow(a,u))*Math.sin(j*u));
                     var curZ = (-c)*(b + r*Math.sin(v))*(Math.pow(a,u)*k*Math.sin(v));
@@ -120,6 +121,8 @@ function generateMollusk(){
                 }
             }
             
+            numVertices = vertices.length;
+
             console.log(vertices);
 
             for(let i = 0; i < (vertices.length/4)-3; i++){
@@ -202,8 +205,6 @@ window.onload = function init() {
     thetaLoc = gl.getUniformLocation(program, "theta"); 
     
     viewerPos = vec3(0.0, 0.0, -20.0 );
-
-    projection = ortho(-1, 1, -1, 1, -100, 100);
     
     ambientProduct = mult(lightAmbient, materialAmbient);
     diffuseProduct = mult(lightDiffuse, materialDiffuse);
@@ -239,8 +240,11 @@ window.onload = function init() {
     gl.uniform1f(gl.getUniformLocation(program, 
        "shininess"),materialShininess);
     
+
+    projectionMatrix = ortho(-cameraZoom,cameraZoom, -cameraZoom * 0.3, cameraZoom * 1.7,-cameraZoom,cameraZoom);
+
     gl.uniformMatrix4fv( gl.getUniformLocation(program, "projectionMatrix"),
-       false, flatten(projection));
+       false, flatten(projectionMatrix));
     
     render();
 }
