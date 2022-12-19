@@ -23,6 +23,7 @@ var materialShininess = 100.0;
 var ctm;
 var ambientColor, diffuseColor, specularColor;
 var modelView, projectionMatrix;
+var rotationMatrix = mat4();
 var viewerPos;
 var program;
 
@@ -34,7 +35,8 @@ var theta =[0, 0, 0];
 
 var thetaLoc;
 
-var flag = true;
+var flag = false;
+var dragFlag = false;
 
 var molluskType = 'turritella';
 var a = 1.1;
@@ -54,6 +56,12 @@ var cameraX;
 var cameraY;
 var cameraZ;
 var cameraZoom = 20;
+var cameraZoomMin = 10;
+var cameraZoomMax = 50;
+
+var xRotation = 0;
+var yRotation = 0;
+
 
 function quad(a, b, c, d) {
 
@@ -117,13 +125,10 @@ function generateMollusk(){
                     var curY = (bigR + r*Math.cos(v))*((-Math.pow(a,u))*Math.sin(j*u));
                     var curZ = (-c)*(b + r*Math.sin(v))*(Math.pow(a,u)*k*Math.sin(v));
                     vertices.push(vec4(curX, curY, curZ, 1));
-                    //console.log("___________\nc:\n" + c)
                 }
             }
             
             numVertices = vertices.length;
-
-            console.log(vertices);
 
             for(let i = 0; i < (vertices.length/4)-3; i++){
                 var t1 = subtract(vertices[i+1], vertices[i]);
@@ -227,6 +232,26 @@ window.onload = function init() {
 	document.getElementById("c-slider").onchange = function(){c = event.srcElement.value;};
 	document.getElementById("count1-slider").onchange = function(){count1 = event.srcElement.value;};
 	document.getElementById("count2-slider").onchange = function(){count2 = event.srcElement.value;};
+	canvas.addEventListener("wheel", function(event){
+        cameraZoom += event.deltaY * 0.01;
+        if(cameraZoom < cameraZoomMin)
+            cameraZoom = cameraZoomMin;
+        else if( cameraZoom > cameraZoomMax)
+            cameraZoom = cameraZoomMax;
+        projectionMatrix = ortho(-cameraZoom,cameraZoom, -cameraZoom * 0.3, cameraZoom * 1.7,-cameraZoom,cameraZoom);
+	});
+    canvas.addEventListener("mouseup", function(event){dragFlag = false;});
+    canvas.addEventListener("mousedown", function(event){dragFlag = true;});
+    canvas.addEventListener("mousemove", function(event){
+        if(dragFlag){
+            xRotation += event.movementX / Math.pow(cameraZoom, 0.5);
+            yRotation += event.movementY / Math.pow(cameraZoom, 0.7);
+            rotationMatrix = mat4();
+            rotationMatrix = mult(rotationMatrix, rotate(xRotation, [0, 1, 0] ));
+            rotationMatrix = mult(rotationMatrix, rotate(yRotation, [1, 0, 0] ));
+        }
+    });
+    
 	
     gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"),
        flatten(ambientProduct));
@@ -243,8 +268,7 @@ window.onload = function init() {
 
     projectionMatrix = ortho(-cameraZoom,cameraZoom, -cameraZoom * 0.3, cameraZoom * 1.7,-cameraZoom,cameraZoom);
 
-    gl.uniformMatrix4fv( gl.getUniformLocation(program, "projectionMatrix"),
-       false, flatten(projectionMatrix));
+    
     
     render();
 }
@@ -259,10 +283,14 @@ var render = function(){
     modelView = mult(modelView, rotate(theta[xAxis], [1, 0, 0] ));
     modelView = mult(modelView, rotate(theta[yAxis], [0, 1, 0] ));
     modelView = mult(modelView, rotate(theta[zAxis], [0, 0, 1] ));
+    modelView = mult( modelView, rotationMatrix);
     
     gl.uniformMatrix4fv( gl.getUniformLocation(program,
             "modelViewMatrix"), false, flatten(modelView) );
-
+    
+    gl.uniformMatrix4fv( gl.getUniformLocation(program, "projectionMatrix"),
+       false, flatten(projectionMatrix));
+    
     gl.drawArrays( gl.LINES, 0, numVertices );
             
             
