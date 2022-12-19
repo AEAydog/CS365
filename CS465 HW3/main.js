@@ -5,6 +5,8 @@ var gl;
 
 var numVertices  = 36;
 
+var R, r, a, b, i, j, k, c, count1, count2;
+
 var pointsArray = [];
 var normalsArray = [];
 
@@ -128,7 +130,20 @@ window.onload = function init() {
     document.getElementById("ButtonY").onclick = function(){axis = yAxis;};
     document.getElementById("ButtonZ").onclick = function(){axis = zAxis;};
     document.getElementById("ButtonT").onclick = function(){flag = !flag;};
-
+	
+	
+	
+	document.getElementById("R-slider").onchange = function(){R = event.srcElement.value;};
+	document.getElementById("r-slider").onchange = function(){r = event.srcElement.value;};
+	document.getElementById("a-slider").onchange = function(){a = event.srcElement.value;};
+	document.getElementById("b-slider").onchange = function(){b = event.srcElement.value;};
+	document.getElementById("i-slider").onchange = function(){i = event.srcElement.value;};
+	document.getElementById("j-slider").onchange = function(){j = event.srcElement.value;};
+	document.getElementById("k-slider").onchange = function(){k = event.srcElement.value;};
+	document.getElementById("c-slider").onchange = function(){c = event.srcElement.value;};
+	document.getElementById("count1-slider").onchange = function(){count1 = event.srcElement.value;};
+	document.getElementById("count2-slider").onchange = function(){count2 = event.srcElement.value;};
+	
     gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"),
        flatten(ambientProduct));
     gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"),
