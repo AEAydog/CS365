@@ -20,6 +20,7 @@ var vertices = [];
 var vertexColors = [
     vec4( 0.0, 0.0, 0.0, 1.0 ),  // black
     vec4( 1.0, 0.0, 0.0, 1.0 ),  // red
+    vec4( 0.990, 0.426, 0.887 ), // pink
     vec4( 1.0, 1.0, 0.0, 1.0 ),  // yellow
     vec4( 0.0, 1.0, 0.0, 1.0 ),  // green
     vec4( 0.0, 0.0, 1.0, 1.0 ),  // blue
