@@ -57,7 +57,8 @@ var vIncrement = 0.1;
 var uIncrement = 0.1;
 var angleLimit = 2 * Math.PI;
 
-
+var vCount;
+var uCount;
 
 var cameraX;
 var cameraY = -10;
@@ -126,17 +127,52 @@ function generateMollusk(){
     switch(molluskType){
         case 'turritella':
             var v, u;
-            for( v = 0.0; v < 1.5*angleLimit; v+=vIncrement ){
-                for( u = 0.0; u < 2*angleLimit; u+=uIncrement ){
+            vCount = 0;
+            uCount = 0;
+            var uFlag = true;
+            for( u = 0.0; u < 2*angleLimit; u+=uIncrement ){
+                for( v = 0.0; v < 1.5*angleLimit; v+=vIncrement ){
                     var curX = (bigR + r*Math.cos(v))*(Math.pow(a,u)*Math.cos(j*u));
                     var curY = (bigR + r*Math.cos(v))*((-Math.pow(a,u))*Math.sin(j*u));
                     var curZ = (-c)*(b + r*Math.sin(v))*(Math.pow(a,u)*k*Math.sin(v));
                     vertices.push(vec4(curX, curY, curZ, 1));
+                    if( uFlag )
+                        vCount++;
                 }
+                //uCount = 0;
+                uFlag = false;
+                uCount++;
             }
 			
             numVertices = vertices.length;
-
+            
+            
+            for(let i = 0; i < uCount-1; i++){
+                for(let j = 0; j < vCount-1; j++){
+                    var p1 = i*vCount+j;
+                    var p2 = p1+1;
+                    var p3 = (i+1)*vCount+j;
+                    var p4 = p3+1;
+                    var t1 = subtract(vertices[p1], vertices[p2]);
+                    var t2 = subtract(vertices[p3], vertices[p2]);
+                    var normal = cross(t1, t2);
+                    var normal = vec3(normal);
+                    pointsArray.push(vertices[p1]); 
+                    normalsArray.push(normal); 
+                    pointsArray.push(vertices[p2]); 
+                    normalsArray.push(normal); 
+                    pointsArray.push(vertices[p3]); 
+                    normalsArray.push(normal); 
+                    pointsArray.push(vertices[p2]); 
+                    normalsArray.push(normal); 
+                    pointsArray.push(vertices[p3]); 
+                    normalsArray.push(normal); 
+                    pointsArray.push(vertices[p4]); 
+                    normalsArray.push(normal); 
+                }
+            }
+            
+            /*
             for(let i = 0; i < (vertices.length-4); i+=4){
                 var t1 = subtract(vertices[i+1], vertices[i]);
                 var t2 = subtract(vertices[i+2], vertices[i+1]);
@@ -155,26 +191,6 @@ function generateMollusk(){
                 pointsArray.push(vertices[i+3]); 
                 normalsArray.push(normal); 
             }
-            
-            /*
-            var t1 = subtract(vertices[b], vertices[a]);
-            var t2 = subtract(vertices[c], vertices[b]);
-            var normal = cross(t1, t2);
-            var normal = vec3(normal);
-    
-    
-            pointsArray.push(vertices[a]); 
-            normalsArray.push(normal); 
-            pointsArray.push(vertices[b]); 
-            normalsArray.push(normal); 
-            pointsArray.push(vertices[c]); 
-            normalsArray.push(normal);   
-            pointsArray.push(vertices[a]);  
-            normalsArray.push(normal); 
-            pointsArray.push(vertices[c]); 
-            normalsArray.push(normal); 
-            pointsArray.push(vertices[d]); 
-            normalsArray.push(normal);
             */
         break;
         default:
@@ -216,7 +232,7 @@ window.onload = function init() {
 	
     nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
+    //gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
     gl.bufferData( gl.ARRAY_BUFFER, 200000 * 8, gl.STATIC_DRAW );
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(normalsArray));
 	
@@ -339,7 +355,7 @@ var render = function(){
     gl.uniformMatrix4fv( gl.getUniformLocation(program, "projectionMatrix"),
        false, flatten(projectionMatrix));
     
-    gl.drawArrays( gl.LINE_STRIP, 0, numVertices );
+    gl.drawArrays( gl.TRIANGLES, 0, numVertices );
             
             
     requestAnimFrame(render);
