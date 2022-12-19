@@ -137,7 +137,7 @@ function generateMollusk(){
 			
             numVertices = vertices.length;
 
-            for(let i = 0; i < (vertices.length/4)-3; i++){
+            for(let i = 0; i < (vertices.length-4); i+=4){
                 var t1 = subtract(vertices[i+1], vertices[i]);
                 var t2 = subtract(vertices[i+2], vertices[i+1]);
                 var normal = cross(t1, t2);
@@ -147,6 +147,12 @@ function generateMollusk(){
                 pointsArray.push(vertices[i+1]); 
                 normalsArray.push(normal); 
                 pointsArray.push(vertices[i+2]); 
+                normalsArray.push(normal); 
+                pointsArray.push(vertices[i]); 
+                normalsArray.push(normal); 
+                pointsArray.push(vertices[i+2]); 
+                normalsArray.push(normal); 
+                pointsArray.push(vertices[i+3]); 
                 normalsArray.push(normal); 
             }
             
@@ -211,7 +217,7 @@ window.onload = function init() {
     nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
     gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
-    gl.bufferData( gl.ARRAY_BUFFER, 100000 * 8, gl.STATIC_DRAW );
+    gl.bufferData( gl.ARRAY_BUFFER, 200000 * 8, gl.STATIC_DRAW );
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(normalsArray));
 	
 	
@@ -222,7 +228,7 @@ window.onload = function init() {
     vBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
     //gl.bufferData( gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW );
-    gl.bufferData( gl.ARRAY_BUFFER, 100000 * 8, gl.STATIC_DRAW );
+    gl.bufferData( gl.ARRAY_BUFFER, 200000 * 8, gl.STATIC_DRAW );
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(pointsArray));
 	
 	
@@ -243,16 +249,30 @@ window.onload = function init() {
     document.getElementById("ButtonZ").onclick = function(){axis = zAxis;};
     document.getElementById("ButtonT").onclick = function(){flag = !flag;};
 	
+
+	document.getElementById("R-slider").value = bigR;
+	document.getElementById("r-slider").value = r;
+	document.getElementById("a-slider").value = a;
+	document.getElementById("b-slider").value = b;
+	document.getElementById("c-slider").value = c;
+	document.getElementById("j-slider").value = j;
+	document.getElementById("k-slider").value = k;
+	document.getElementById("l-slider").value = l;
+	document.getElementById("m-slider").value = m;
+	document.getElementById("v-slider").value = count1;
+	document.getElementById("u-slider").value = count2;
+
 	document.getElementById("R-slider").onchange = function(){bigR = parseFloat(event.srcElement.value); refreshMollusk(); };
 	document.getElementById("r-slider").onchange = function(){r = parseFloat(event.srcElement.value); refreshMollusk(); };
 	document.getElementById("a-slider").onchange = function(){a = parseFloat(event.srcElement.value); refreshMollusk(); };
 	document.getElementById("b-slider").onchange = function(){b = parseFloat(event.srcElement.value); refreshMollusk(); };
-	document.getElementById("i-slider").onchange = function(){i = parseFloat(event.srcElement.value); refreshMollusk(); };
+	document.getElementById("c-slider").onchange = function(){c = parseFloat(event.srcElement.value); refreshMollusk(); };
 	document.getElementById("j-slider").onchange = function(){j = parseFloat(event.srcElement.value); refreshMollusk(); };
 	document.getElementById("k-slider").onchange = function(){k = parseFloat(event.srcElement.value); refreshMollusk(); };
-	document.getElementById("c-slider").onchange = function(){c = parseFloat(event.srcElement.value); refreshMollusk(); };
-	document.getElementById("count1-slider").onchange = function(){count1 = parseFloat(event.srcElement.value); refreshMollusk(); };
-	document.getElementById("count2-slider").onchange = function(){count2 = parseFloat(event.srcElement.value); refreshMollusk(); };
+	document.getElementById("l-slider").onchange = function(){l = parseFloat(event.srcElement.value); refreshMollusk(); };
+	document.getElementById("m-slider").onchange = function(){m = parseFloat(event.srcElement.value); refreshMollusk(); };
+	document.getElementById("v-slider").onchange = function(){count1 = parseFloat(event.srcElement.value); refreshMollusk(); };
+	document.getElementById("u-slider").onchange = function(){count2 = parseFloat(event.srcElement.value); refreshMollusk(); };
 	
 
 	canvas.addEventListener("wheel", function(event){
