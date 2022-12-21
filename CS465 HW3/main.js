@@ -12,8 +12,9 @@ var pointsArray = [];
 var normalsArray = [];
 
 var vertices = [];
+var normals = [];
 
-var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
+var lightPosition = vec4(100.0, 100.0, 100.0, 0.0 );
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -131,11 +132,44 @@ function generateMollusk(){
             vCount = 0;
             uCount = 0;
             var uFlag = true;
-            for( let u = 0.0; u < 2*angleLimit; u+=uIncrement ){
-                for( let v = 0.0; v < 1.5*angleLimit; v+=vIncrement ){
-                    var curX = (bigR + r*Math.cos(v))*(Math.pow(a,u)*Math.cos(j*u));
-                    var curY = (bigR + r*Math.cos(v))*((-Math.pow(a,u))*Math.sin(j*u));
-                    var curZ = (-c)*(b + r*Math.sin(v))*(Math.pow(a,u)*k*Math.sin(v));
+            for( let u = 0.0; u < 2.0 * angleLimit; u+=uIncrement ){
+                for( let v = 0.0; v < 1.0 * angleLimit; v+=vIncrement ){
+					
+					pow = Math.pow;
+					sin = Math.sin;
+					cos = Math.cos;
+					ln = Math.log;
+					
+                    var curX = (bigR + r*cos(v))*(pow(a,u)*cos(j*u));
+                    var curY = (bigR + r*cos(v))*((-pow(a,u))*sin(j*u));
+                    var curZ = (-c)*(b + r*sin(v))*(pow(a,u)*k*sin(v));
+					
+					
+					
+					//dF/du
+					var dxu = pow(a,u) * (r * cos(v) + bigR) * ( ln(a) * cos( j * u ) - j * sin( j * u ) );
+					var dyu = -pow(a,u) * (r * cos(v) + bigR) * ( ln(a) * sin( j * u ) + j * cos( j * u ) );
+					var dzu = -c * k * pow(a,u) * ln(a) * sin(v) * (b + r * sin(v));
+					
+					
+					//dF/dv
+					var dxv = -r * pow(a,u) * sin(v) * cos(j * u);
+					var dyv = r * pow(a,u) * sin(v) * sin(j * u);
+					var dzv = -c * k * pow(a,u) * cos(v) * (b + 2 * r * sin(v));
+					
+					//dF/dv x df/du		//Normals:.)
+					var A = [dxu,dyu,dzu];
+					var B = [dxv,dyv,dzv];
+					var du = vec3(dxu,dyu,dzu);
+					var dv = vec3(dxv,dyv,dzv);
+					
+					//var n = vec3( A[2] * B[3] - A[3] * B[2], A[3] * B[1] - A[1] * B[3], A[1] * B[2] - A[2] * B[1] );
+					
+					
+					var n = mult(du,dv);
+					normals.push(n);
+					
+					
                     vertices.push(vec4(curX, curY, curZ, 1));
                     if( uFlag )
                         vCount++;
@@ -156,21 +190,33 @@ function generateMollusk(){
                     var p2 = p1+1;
                     var p3 = (i+1)*vCount+j;
                     var p4 = p3+1;
-                    var t1 = subtract(vertices[p1], vertices[p2]);
-                    var t2 = subtract(vertices[p3], vertices[p2]);
+                    var t1 = subtract(vertices[p3], vertices[p1]);
+                    var t2 = subtract(vertices[p2], vertices[p3]);
                     var normal = cross(t1, t2);
                     var normal = vec3(normal);
+					
                     pointsArray.push(vertices[p1]); 
-                    normalsArray.push(normal); 
-                    pointsArray.push(vertices[p2]); 
-                    normalsArray.push(normal); 
+					//normalsArray.push(normals[p1]);
+					normalsArray.push(normal);
+					
                     pointsArray.push(vertices[p3]); 
+					//normalsArray.push(normals[p3]);
+					normalsArray.push(normal);
+					
+                    pointsArray.push(vertices[p2]);
+					//normalsArray.push(normals[p2]);					
                     normalsArray.push(normal); 
-                    pointsArray.push(vertices[p2]); 
+					
+                    pointsArray.push(vertices[p3]);
+					//normalsArray.push(normals[p3]);
                     normalsArray.push(normal); 
-                    pointsArray.push(vertices[p3]); 
+					
+                    pointsArray.push(vertices[p2]);
+					//normalsArray.push(normals[p2]);
                     normalsArray.push(normal); 
+					
                     pointsArray.push(vertices[p4]); 
+					//normalsArray.push(normals[p4]);
                     normalsArray.push(normal); 
                 }
             }
