@@ -1,10 +1,20 @@
 <!DOCTYPE html>
 <html>
 
-<button id = "ButtonX">Rotate X</button>
-<button id = "ButtonY">Rotate Y</button>
-<button id = "ButtonZ">Rotate Z</button>
-<button id = "ButtonT">Toggle Rotation</button>
+
+<div>
+    <button id = "ButtonX">Rotate X</button>
+    <button id = "ButtonY">Rotate Y</button>
+    <button id = "ButtonZ">Rotate Z</button>
+    <button id = "ButtonT">Toggle Rotation</button>
+
+    <br>
+
+    <input id="textureCheckbox" type="checkbox" name = "Texture">
+    <label for="textureCheckbox">Texture</label>
+    <input id="wireframeCheckbox" type="checkbox" name = "Texture">
+    <label for="wireframeCheckbox">Wireframe</label>
+</div>
 
 
 <script id="vertex-shader" type="x-shader/x-vertex">
@@ -21,6 +31,8 @@ uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
 uniform vec4 lightPosition;
 uniform float shininess;
+uniform int optionsTextureV;
+
 void main()
 {
     vec3 pos = -(modelViewMatrix * vPosition).xyz;
@@ -56,8 +68,13 @@ void main()
     gl_Position = projectionMatrix * modelViewMatrix * vPosition;
     fColor = ambient + diffuse +specular;
     
-    fColor = vColor;
-    fTexCoord = vTexCoord;
+    if(optionsTextureV == 1){
+        fColor = vColor;
+        fTexCoord = vTexCoord;
+    }
+    else{
+        fColor.a = 1.0;
+    }
 }
 </script>
 
@@ -69,11 +86,15 @@ varying vec4 fColor;
 varying vec2 fTexCoord;
 
 uniform sampler2D texture;
-
+uniform int optionsTexture;
 void
 main()
 {
-    gl_FragColor = fColor*texture2D( texture, fTexCoord );
+    if( optionsTexture == 1 ){
+        gl_FragColor = fColor*texture2D( texture, fTexCoord );
+    } else{
+        gl_FragColor = fColor;
+    }
 }
 </script>
 

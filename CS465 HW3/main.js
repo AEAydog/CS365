@@ -89,6 +89,9 @@ var yRotation = 0;
 
 var qeqe = 0.0;
 
+var optionsTexture = false;
+var optionsWireframe = false;
+
 var texSize = 32;
 
 var texCoord = [
@@ -316,7 +319,16 @@ window.onload = function init() {
     document.getElementById("ButtonY").onclick = function(){axis = yAxis;};
     document.getElementById("ButtonZ").onclick = function(){axis = zAxis;};
     document.getElementById("ButtonT").onclick = function(){flag = !flag;};
-	
+	document.getElementById("textureCheckbox").onchange = function() {
+        optionsTexture = event.target.checked ? 1 : 0;
+		gl.uniform1i(gl.getUniformLocation(program, "optionsTexture"), optionsTexture);
+		gl.uniform1i(gl.getUniformLocation(program, "optionsTextureV"), optionsTexture);
+    };
+    document.getElementById("wireframeCheckbox").onchange = function() {
+        optionsWireframe = event.target.checked ? 1 : 0;
+		gl.uniform1i(gl.getUniformLocation(program, "optionsWireframe"), optionsWireframe);
+		gl.uniform1i(gl.getUniformLocation(program, "optionsWireframeV"), optionsWireframe);
+    };
 
 	document.getElementById("R-slider").value = bigR;
 	document.getElementById("r-slider").value = r;
@@ -405,8 +417,11 @@ var render = function(){
     gl.uniformMatrix4fv( gl.getUniformLocation(program, "projectionMatrix"),
        false, flatten(projectionMatrix));
     
-    gl.drawArrays( gl.TRIANGLES, 0, numVertices );
-    //gl.drawArrays( gl.LINE_STRIP, 0, numVertices );
-            
+    if( optionsWireframe ){
+        gl.drawArrays( gl.TRIANGLES, 0, numVertices );
+    }
+    else{
+        gl.drawArrays( gl.LINE_STRIP, 0, numVertices );
+    }   
     requestAnimFrame(render);
 }
