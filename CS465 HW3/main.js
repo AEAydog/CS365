@@ -90,7 +90,7 @@ var yRotation = 0;
 var qeqe = 0.0;
 
 var optionsTexture = false;
-var optionsWireframe = false;
+var optionsWireframe = true;
 
 var texSize = 32;
 
@@ -417,7 +417,7 @@ var render = function(){
     gl.uniformMatrix4fv( gl.getUniformLocation(program, "projectionMatrix"),
        false, flatten(projectionMatrix));
     
-    if( optionsWireframe ){
+    if( !optionsWireframe ){
         gl.drawArrays( gl.TRIANGLES, 0, numVertices );
     }
     else{
