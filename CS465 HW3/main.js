@@ -11,12 +11,15 @@ var vColor;
 var cBuffer;
 var tBuffer;
 
-var pointsArray = [];
-var normalsArray = [];
-var texCoordsArray = [];
-var colorsArray = [];
+var pointsArray = new Array();
+var pointsArraySub = new Array();
+var normalsArray = new Array();
+var texCoordsArray = new Array();
+var colorsArray = new Array();
 
-var vertices = [];
+var vertices = new Array();
+var tempNormals = new Array();
+var tempVN = new Array();
 
 var vertexColors = [
     vec4( 0.0, 0.0, 0.0, 1.0 ),  // black
@@ -91,6 +94,7 @@ var qeqe = 0.0;
 
 var optionsTexture = false;
 var optionsWireframe = true;
+var optionsSmoothShading = false;
 
 var texSize = 32;
 
@@ -132,13 +136,22 @@ function configureTexture(image) {
 }
 
 
+function withinBounds( v, u ){
+    if(v >= 0 && v < uCount && u >= 0 && u < uCount){
+        return u*vCount + v;
+    }
+    return -1;
+}
+
 function generateMollusk(){
 	
-	vertices = [];
-	pointsArray = [];
-	normalsArray = [];
-    colorsArray = [];
-    texCoordsArray = [];
+	vertices = new Array();
+	pointsArray = new Array();
+    pointsArraySub = new Array();
+	normalsArray = new Array();
+    colorsArray = new Array();
+    texCoordsArray = new Array();
+    tempVN = new Array();
 	
 	vIncrement = 1.0 / count1;
 	uIncrement = 0.5 / count2;
@@ -164,22 +177,28 @@ function generateMollusk(){
             }
 			
             numVertices = vertices.length * 6;
+
+            tempVN = new Array( uCount );
+            for (let i = 0; i < uCount; i++) {
+                tempVN[i] = new Array(vCount+1);
+            }
+            for(let u = 0; u < uCount; u++){
+                for(let v = 0; v < vCount+1; v++){
+                    tempVN[u][v] = new Array();
+                }
+            }
             
-			
-            for(let i = 0; i < uCount-1; i++){
-                for(let j = 0; j < vCount; j++){
-                    var p1 = i*vCount+j;
+            for(let u = 0; u < uCount-1; u++){
+                for(let v = 0; v < vCount; v++){
+                    var p1 = u*vCount+v;
                     var p2 = p1+1;
-                    var p3 = (i+1)*vCount+j;
+                    var p3 = (u+1)*vCount+v;
                     var p4 = p3+1;
-                    
-                    if( j == vCount-1){
-                        p2 = (i+1)*vCount;
-                        p4 = (i+2)*vCount;
-                        if( i == uCount-2 ){
-                            p2 -= vCount;
-                            p4 -= vCount;
-                        }
+                    var nextV = v+1;
+                    var nextU = u+1;
+                    if( v == vCount-1){
+                        p2 = (u)*vCount;
+                        p4 = (u+1)*vCount;
                     }
 
                     var t1 = subtract(vertices[p3], vertices[p1]);
@@ -187,41 +206,137 @@ function generateMollusk(){
                     var normal = cross(t1, t2);
                     var normal = vec3(normal);
 
-                    var thisColor = (j+i) % 2 == 0 ? vertexColors[2] : vertexColors[2];
+                    var thisColor = (v+u) % 2 == 0 ? vertexColors[2] : vertexColors[2];
 
 
-                    pointsArray.push(vertices[p1]); 
+                    pointsArray.push(vertices[p1]);
+                    pointsArraySub.push([v, u]);
                     normalsArray.push(normal); 
+                    //tempNormals.push(normal); 
                     colorsArray.push(thisColor);
                     texCoordsArray.push(texCoord[0]);
 
                     pointsArray.push(vertices[p3]); 
+                    pointsArraySub.push([v, u+1]);
                     normalsArray.push(normal);
+                    //tempNormals.push(normal); 
                     colorsArray.push(thisColor);
                     texCoordsArray.push(texCoord[1]);
 
                     pointsArray.push(vertices[p2]); 
+                    pointsArraySub.push([v+1, u]);
                     normalsArray.push(normal); 
+                    //tempNormals.push(normal); 
                     colorsArray.push(thisColor);
                     texCoordsArray.push(texCoord[2]);
 
                     pointsArray.push(vertices[p3]); 
+                    pointsArraySub.push([v, u+1]);
                     normalsArray.push(normal); 
+                    //tempNormals.push(normal); 
                     colorsArray.push(thisColor);
                     texCoordsArray.push(texCoord[0]);
 
                     pointsArray.push(vertices[p2]); 
+                    pointsArraySub.push([v+1, u]);
                     normalsArray.push(normal); 
+                    //tempNormals.push(normal); 
                     colorsArray.push(thisColor);
                     texCoordsArray.push(texCoord[1]);
 
                     pointsArray.push(vertices[p4]); 
+                    pointsArraySub.push([v+1, u+1]);
                     normalsArray.push(normal); 
+                    //tempNormals.push(normal); 
                     colorsArray.push(thisColor);
                     texCoordsArray.push(texCoord[2]);
 
+                    console.log(u + ", " + v);
+                    tempVN[u][v].push(normal);
+                    tempVN[u+1][v].push(normal);
+                    tempVN[u][v+1].push(normal);
+                    tempVN[u+1][v+1].push(normal);
+
                 }
             }
+            
+            if( optionsSmoothShading ){
+                for(let i = 0; i < pointsArray.length; i++){
+                    var v = pointsArraySub[i][0];
+                    var u = pointsArraySub[i][1];
+                    var currentID = withinBounds(v, u);
+                    var curCount = 0;
+                    var curSum;
+                    //console.log(u + ", " + v);
+                    /*
+                    var tmp = withinBounds(v-1, u-1);
+                    if( tmp != -1 ){
+                        curSum = curSum == null ? normalsArray[tmp] : add( normalsArray[tmp] , curSum);
+                        curCount++;
+                        //console.log(curSum);
+                    }
+                    tmp = withinBounds(v-1, u);
+                    if( tmp != -1 ){
+                        curSum = curSum == null ? normalsArray[tmp] : add( normalsArray[tmp] , curSum);
+                        curCount++;
+                        //console.log(curSum);
+                    }
+                    tmp = withinBounds(v-1, u+1);
+                    if( tmp != -1 ){
+                        curSum = curSum == null ? normalsArray[tmp] : add( normalsArray[tmp] , curSum);
+                        curCount++;
+                        //console.log(curSum);
+                    }
+                    tmp = withinBounds(v, u-1);
+                    if( tmp != -1 ){
+                        curSum = curSum == null ? normalsArray[tmp] : add( normalsArray[tmp] , curSum);
+                        curCount++;
+                        //console.log(curSum);
+                    }
+                    tmp = withinBounds(v, u+1);
+                    if( tmp != -1 ){
+                        curSum = curSum == null ? normalsArray[tmp] : add( normalsArray[tmp] , curSum);
+                        curCount++;
+                        //console.log(curSum);
+                    }
+                    tmp = withinBounds(v+1, u-1);
+                    if( tmp != -1 ){
+                        curSum = curSum == null ? normalsArray[tmp] : add( normalsArray[tmp] , curSum);
+                        curCount++;
+                        //console.log(curSum);
+                    }
+                    tmp = withinBounds(v+1, u);
+                    if( tmp != -1 ){
+                        curSum = curSum == null ? normalsArray[tmp] : add( normalsArray[tmp] , curSum);
+                        curCount++;
+                        //console.log(curSum);
+                    }
+                    tmp = withinBounds(v+1, u+1);
+                    if( tmp != -1 ){
+                        curSum = curSum == null ? normalsArray[tmp] : add( normalsArray[tmp] , curSum);
+                        curCount++;
+                        //console.log(curSum);
+                    }
+                    */
+
+                    //console.log(i);
+                    //console.log(u + ", " + v);
+                    //console.log(tempVN[u][v][0]);
+                    if( tempVN[u][v] == null){
+                        tempNormals.push(normalsArray[i]);
+                    }
+                    curSum = tempVN[u][v][0];
+                    for(let i = 1; i < tempVN[u][v].length; i++){
+                        //console.log(i);
+                        curSum = add( curSum, tempVN[u][v][i]);
+                    }
+                    curSum = scale( tempVN[u][v].length, curSum);
+                    //console.log(curSum);
+                    tempNormals.push(curSum);
+                }
+                normalsArray = tempNormals;
+            }
+
         break;
         default:
         break;
@@ -231,9 +346,13 @@ function generateMollusk(){
 
 function refreshMollusk(){
 	generateMollusk();
-	
+
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(normalsArray));
+    //if( optionsSmoothShading ){
+    //    gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(tempNormals));
+    //} else{
+        gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(normalsArray));
+    //}
 
     gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(pointsArray));
@@ -328,6 +447,12 @@ window.onload = function init() {
         optionsWireframe = event.target.checked ? 1 : 0;
 		gl.uniform1i(gl.getUniformLocation(program, "optionsWireframe"), optionsWireframe);
 		gl.uniform1i(gl.getUniformLocation(program, "optionsWireframeV"), optionsWireframe);
+    };
+    document.getElementById("smoothShadingCheckbox").onchange = function() {
+        optionsSmoothShading = event.target.checked ? 1 : 0;
+		gl.uniform1i(gl.getUniformLocation(program, "optionsSmoothShading"), optionsSmoothShading);
+		gl.uniform1i(gl.getUniformLocation(program, "optionsSmoothShadingV"), optionsSmoothShading);
+        refreshMollusk();
     };
 
 	document.getElementById("R-slider").value = bigR;
